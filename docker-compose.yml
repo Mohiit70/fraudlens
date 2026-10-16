@@ -1,0 +1,15 @@
+# FraudLens v2 — local FalkorDB (no auth needed locally).
+# For FalkorDB Cloud, skip this file and set FALKOR_HOST / FALKOR_PORT /
+# FALKOR_PASSWORD env vars instead (see .env.example and README).
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    ports:
+      - "6379:6379"
+      - "3000:3000"   # FalkorDB browser UI — inspect the graph by hand
+    volumes:
+      - falkordb-data:/data
+    restart: unless-stopped
+
+volumes:
+  falkordb-data:

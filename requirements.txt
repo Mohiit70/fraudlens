@@ -1,0 +1,4 @@
+# FraudLens v2 — pinned dependencies (verified against PyPI, Oct 2026)
+falkordb==1.8.0
+fastapi==0.143.3
+uvicorn==0.54.0

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FraudLens — Autonomous Fraud Investigation Unit</title>
+<style>
+  :root{
+    --bg:#06080c; --panel:#0c1016; --panel2:#10151d; --line:#1f2733;
+    --txt:#e8eef5; --dim:#8b98a9; --faint:#5a6678;
+    --red:#ff3b47; --red-dim:#7a1f26; --green:#3ddc84; --amber:#f0a832;
+    --blue:#5aa9ff; --purple:#b07fff; --teal:#3fd4c1;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--txt);font-family:var(--mono);margin:0;
+       background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,59,71,.06),transparent);}
+  ::selection{background:rgba(255,59,71,.35)}
+
+  /* ---------- header ---------- */
+  header{position:sticky;top:0;z-index:50;background:rgba(6,8,12,.92);
+         backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+  .hbar{max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;
+        align-items:center;gap:18px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:12px}
+  .eye{width:38px;height:38px;border-radius:50%;border:2px solid var(--red);
+       display:grid;place-items:center;box-shadow:0 0 18px rgba(255,59,71,.5);
+       animation:pulse 2.6s ease-in-out infinite}
+  .eye::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--red)}
+  @keyframes pulse{0%,100%{box-shadow:0 0 10px rgba(255,59,71,.35)}50%{box-shadow:0 0 26px rgba(255,59,71,.75)}}
+  .logo h1{margin:0;font-size:20px;letter-spacing:4px}
+  .logo h1 span{color:var(--red)}
+  .tag{font-size:10.5px;color:var(--dim);letter-spacing:2px;margin-top:2px}
+  .stats{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+        padding:7px 12px;font-size:11px;letter-spacing:1px;color:var(--dim);text-align:center}
+  .chip b{display:block;font-size:17px;color:var(--txt);letter-spacing:0;margin-top:2px}
+  .chip.hot b{color:var(--red)} .chip.cool b{color:var(--green)}
+  .conn{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1px;color:var(--dim)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--faint)}
+  .dot.on{background:var(--green);box-shadow:0 0 10px var(--green)}
+  .dot.off{background:var(--red);box-shadow:0 0 10px var(--red)}
+
+  .demo-hint{max-width:1280px;margin:0 auto;padding:10px 22px;font-size:12px;color:var(--dim);
+             border-bottom:1px dashed var(--line)}
+  .demo-hint b{color:var(--amber)}
+
+  main{max-width:1280px;margin:0 auto;padding:26px 22px 60px}
+
+  /* ---------- agent terminal ---------- */
+  .term{background:#04060a;border:1px solid var(--line);border-radius:12px;
+        margin-bottom:26px;overflow:hidden}
+  .term-head{padding:9px 16px;font-size:11px;letter-spacing:2px;color:var(--dim);
+             border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .tl{color:var(--red)}.tl2{color:var(--amber)}.tl3{color:var(--green)}
+  #agentLog{height:150px;overflow-y:auto;padding:12px 16px;font-size:12.5px;line-height:1.75}
+  #agentLog .cmd{color:var(--blue)} #agentLog .ok{color:var(--green)}
+  #agentLog .warn{color:var(--amber)} #agentLog .act{color:var(--red);font-weight:700}
+  #agentLog .dim{color:var(--faint)}
+
+  /* ---------- steps ---------- */
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+        padding:22px;margin-bottom:22px;position:relative;overflow:hidden}
+  .step::before{content:attr(data-n);position:absolute;top:6px;right:18px;
+        font-size:64px;font-weight:700;color:rgba(255,255,255,.035);letter-spacing:-2px}
+  .step h2{margin:0 0 4px;font-size:15px;letter-spacing:2.5px}
+  .step h2 .k{color:var(--red)}
+  .step .desc{color:var(--dim);font-size:12.5px;margin-bottom:16px;max-width:760px;line-height:1.6}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  input[type=text]{background:#04060a;border:1px solid var(--line);color:var(--txt);
+        font-family:var(--mono);font-size:13.5px;padding:10px 14px;border-radius:9px;min-width:200px}
+  input[type=text]:focus{outline:none;border-color:var(--red)}
+  input[type=range]{accent-color:var(--red);width:170px}
+  .depth-val{font-size:12px;color:var(--amber);min-width:64px}
+  button{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:1px;
+         padding:11px 20px;border-radius:9px;border:1px solid var(--line);
+         background:var(--panel2);color:var(--txt);cursor:pointer;transition:.15s}
+  button:hover:not(:disabled){border-color:var(--red);transform:translateY(-1px)}
+  button:disabled{opacity:.45;cursor:wait}
+  button.primary{background:linear-gradient(180deg,#d92b36,#a31620);border-color:#ff6b74;color:#fff}
+  button.ghost{background:transparent}
+  button.mini{font-size:10.5px;padding:5px 10px;letter-spacing:1px}
+  button.armed{background:#fff;color:#a31620;border-color:#fff;animation:blink .7s steps(2) infinite}
+  @keyframes blink{50%{opacity:.55}}
+
+  .results{margin-top:14px}
+  canvas.graph{width:100%;height:340px;background:#04060a;border:1px solid var(--line);
+        border-radius:10px;margin-bottom:12px}
+
+  .cypher{margin:12px 0}
+  .cypher-head{display:flex;justify-content:space-between;align-items:center;
+        font-size:10.5px;letter-spacing:2px;color:var(--amber);margin-bottom:6px}
+  .cypher pre{background:#04060a;border:1px solid var(--line);border-left:3px solid var(--amber);
+        border-radius:0 8px 8px 0;padding:12px 14px;margin:0;overflow-x:auto;
+        font-size:12px;line-height:1.65;color:#ffd479;white-space:pre-wrap}
+  .cypher-meta{font-size:11px;color:var(--faint);margin-top:6px}
+
+  .hop{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:7px 0;font-size:12.5px}
+  .hop-n{color:var(--faint);min-width:34px}
+  .pill{background:rgba(90,169,255,.14);border:1px solid rgba(90,169,255,.5);color:#bcdcff;
+        padding:4px 11px;border-radius:20px;font-weight:700;font-size:12px}
+  .pill.frozen{background:rgba(176,127,255,.16);border-color:var(--purple);color:#d9c6ff}
+  .pill.risk{background:rgba(255,59,71,.14);border-color:var(--red);color:#ffb3b8}
+  .hop-edge{color:var(--green);font-size:11.5px;white-space:nowrap}
+
+  .ring{border:1px dashed rgba(255,59,71,.55);border-radius:10px;padding:14px;margin:10px 0;
+        background:rgba(255,59,71,.04)}
+  .ring-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .ring-title{font-size:13.5px;font-weight:700;color:#ffb3b8}
+  .kv{font-size:12px;color:var(--dim)} .kv b{color:var(--txt)}
+  .stage-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--amber);
+        cursor:pointer;user-select:none;margin-top:10px}
+  .stage-check input{accent-color:var(--red);width:16px;height:16px;cursor:pointer}
+
+  table.rank{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+  table.rank th{text-align:left;color:var(--faint);font-size:10.5px;letter-spacing:1.5px;
+        padding:8px 10px;border-bottom:1px solid var(--line)}
+  table.rank td{padding:9px 10px;border-bottom:1px solid rgba(31,39,51,.6)}
+  table.rank tr:hover td{background:rgba(90,169,255,.05)}
+  .bar{height:6px;border-radius:3px;background:rgba(90,169,255,.15);overflow:hidden;min-width:110px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--purple))}
+  .risk-badge{color:var(--red);font-weight:700} .frozen-badge{color:var(--purple);font-weight:700}
+
+  /* ---------- freeze climax ---------- */
+  .step.climax{border-color:rgba(255,59,71,.6);box-shadow:0 0 40px rgba(255,59,71,.08)}
+  #staged{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;min-height:34px}
+  .staged-chip{background:rgba(255,59,71,.12);border:1px solid var(--red);color:#ffc9cd;
+        padding:6px 8px 6px 12px;border-radius:20px;font-size:12px;font-weight:700;
+        display:flex;align-items:center;gap:8px}
+  .staged-chip button{padding:2px 8px;font-size:11px;background:transparent;border:none;color:var(--red)}
+  .staged-empty{color:var(--faint);font-size:12px;align-self:center}
+  #btnFreeze{font-size:16px;padding:16px 34px;letter-spacing:3px;margin-top:8px;
+        box-shadow:0 0 24px rgba(255,59,71,.35)}
+  .casefile{margin-top:18px;border:1px solid var(--line);border-radius:12px;
+        background:linear-gradient(180deg,#0d1117,#0a0d12);padding:22px;position:relative;overflow:hidden}
+  .stamp{position:absolute;top:18px;right:22px;transform:rotate(12deg);
+        border:3px solid var(--red);color:var(--red);font-weight:700;font-size:20px;
+        letter-spacing:4px;padding:8px 16px;border-radius:6px;
+        box-shadow:0 0 20px rgba(255,59,71,.4);animation:stampIn .35s cubic-bezier(.2,2.4,.4,1)}
+  @keyframes stampIn{from{transform:rotate(12deg) scale(2.4);opacity:0}to{transform:rotate(12deg) scale(1);opacity:1}}
+  .casefile h3{margin:0 0 2px;font-size:13px;letter-spacing:3px;color:var(--dim)}
+  .case-id{font-size:22px;font-weight:700;color:var(--txt);margin-bottom:12px}
+  .case-id span{color:var(--red)}
+  .case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:12.5px}
+  .case-grid .kv{background:#04060a;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+
+  .err{color:#ff8087;font-size:12.5px;margin-top:10px}
+  .okline{color:var(--green);font-size:12.5px;margin-top:10px}
+  .loading{color:var(--dim);font-size:12.5px;margin-top:10px}
+  .loading::after{content:"";animation:dots 1s steps(4) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+
+  footer{max-width:1280px;margin:0 auto;padding:0 22px 40px;color:var(--faint);font-size:11.5px;line-height:1.8}
+  footer b{color:var(--dim)}
+  @media(max-width:900px){.stats{margin-left:0}.hbar{gap:12px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hbar">
+    <div class="logo">
+      <div class="eye"></div>
+      <div>
+        <h1>FRAUD<span>LENS</span></h1>
+        <div class="tag">AUTONOMOUS FRAUD INVESTIGATION UNIT · TRACK 01</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="chip">PERSONS<b id="stPersons">…</b></div>
+      <div class="chip">ACCOUNTS<b id="stAccounts">…</b></div>
+      <div class="chip">TRANSFERS<b id="stTransfers">…</b></div>
+      <div class="chip hot">FROZEN<b id="stFrozen">…</b></div>
+      <div class="chip cool">CASES<b id="stCases">…</b></div>
+    </div>
+    <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">CONNECTING…</span></div>
+  </div>
+  <div class="demo-hint">⚡ <b>60-second demo:</b> ① type <b>A-4000</b> → Investigate &nbsp;② Scan for rings &nbsp;③ stage a ring &nbsp;④ <b>EXECUTE FREEZE</b> — watch the case file hit the graph.</div>
+</header>
+
+<main>
+  <div class="term">
+    <div class="term-head"><span class="tl">●</span><span class="tl2">●</span><span class="tl3">●</span> AGENT ACTIVITY — every decision, on the record</div>
+    <div id="agentLog"><div class="dim">agent standing by — run an investigation step below.</div></div>
+  </div>
+
+  <!-- STEP 01 -->
+  <section class="step" data-n="01">
+    <h2><span class="k">▸</span> TRACE THE MONEY</h2>
+    <div class="desc">The agent takes a suspect account and lets the <b>graph</b> decide where the money went — a multi-hop <span style="color:var(--amber)">TRANSFERRED</span> traversal no vector DB can express, and 4+ joins in SQL. Try <b>A-4000</b> (a planted mule).</div>
+    <div class="controls">
+      <input type="text" id="acct" value="A-4000" spellcheck="false" placeholder="Account id, e.g. A-4000">
+      <input type="range" id="depth" min="1" max="5" value="3">
+      <span class="depth-val">depth <b id="depthVal">3</b></span>
+      <button id="btnTrace" class="ghost">🔍 INVESTIGATE</button>
+    </div>
+    <div class="results" id="traceResults" hidden>
+      <canvas class="graph" id="traceCanvas"></canvas>
+      <div id="traceList"></div>
+      <div id="traceCypher"></div>
+    </div>
+  </section>
+
+  <!-- STEP 02 -->
+  <section class="step" data-n="02">
+    <h2><span class="k">▸</span> HUNT THE RING</h2>
+    <div class="desc">Mule networks reuse infrastructure. The agent finds <b>4+ accounts sharing one device</b>, then pulls the IPs they share — the classic fraud-ring fingerprint, as a single graph pattern.</div>
+    <div class="controls">
+      <button id="btnRing" class="ghost">🕸 SCAN FOR RINGS</button>
+    </div>
+    <div class="results" id="ringResults" hidden>
+      <canvas class="graph" id="ringCanvas"></canvas>
+      <div id="ringList"></div>
+      <div id="ringCypher"></div>
+    </div>
+  </section>
+
+  <!-- STEP 03 -->
+  <section class="step" data-n="03">
+    <h2><span class="k">▸</span> FIND THE HUB</h2>
+    <div class="desc">Laundering hubs sit at the center of mule networks. The agent runs <b>PageRank over TRANSFERRED edges</b> — the highest-scoring accounts are the network's kingpins, found with zero labels.</div>
+    <div class="controls">
+      <button id="btnPR" class="ghost">🎯 RANK HUBS</button>
+    </div>
+    <div class="results" id="prResults" hidden>
+      <div id="prTable"></div>
+      <div id="prCypher"></div>
+    </div>
+  </section>
+
+  <!-- STEP 04 — THE CLIMAX -->
+  <section class="step climax" data-n="04">
+    <h2><span class="k">▸</span> EXECUTE FREEZE <span style="color:var(--faint);font-size:11px;letter-spacing:1px">— THE AGENT ACTS</span></h2>
+    <div class="desc">Reading the graph was reconnaissance. <b>This is the action.</b> The agent freezes every staged account (<span style="color:var(--purple)">frozen=true</span>) and writes a <span style="color:var(--amber)">(:Case)-[:TARGETS]->(:Account)</span> case file into the graph — memory the next investigation can build on. This write is the <i>only</i> mutation the API allows.</div>
+    <div class="controls">
+      <input type="text" id="manualIds" spellcheck="false" placeholder="add manually: A-4010,A-4011">
+      <button id="btnAddManual" class="mini ghost">+ ADD</button>
+      <input type="text" id="investigator" spellcheck="false" placeholder="investigator label (optional)" style="min-width:220px">
+    </div>
+    <div id="staged"><span class="staged-empty">no accounts staged — tick “stage for freeze” on a ring or hub above, or add manually.</span></div>
+    <div class="controls">
+      <input type="text" id="reason" value="Suspected fraud ring — agent action" style="min-width:340px">
+      <button id="btnFreeze" class="primary">⚡ EXECUTE FREEZE</button>
+    </div>
+    <div class="results" id="freezeResults" hidden>
+      <div class="casefile" id="caseFile"></div>
+      <canvas class="graph" id="freezeCanvas"></canvas>
+      <div id="freezeCypher"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <b>FRAUDLENS v2</b> — WeMakeDevs × FalkorDB “Graph Hacks”, Track 01: Agents That Act on Connected Data.<br>
+  Agent tools are graph queries; the freeze is a graph write. Every panel above shows the <b>exact Cypher</b> the agent ran — the graph is load-bearing, not decorative.<br>
+  Synthetic data: 75 persons · 95 accounts · ~660 transfers · 3 planted fraud rings. Built with AI assistance (disclosed in README).
+</footer>
+
+<script>
+"use strict";
+/* ============================== helpers ============================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const fmtINR = n => "₹" + Number(n).toLocaleString("en-IN", {maximumFractionDigits: 0});
+const nowT = () => new Date().toTimeString().slice(0, 8);
+
+function agentLog(html, cls) {
+  const el = $("agentLog");
+  const first = el.querySelector(".dim");
+  if (first && el.children.length === 1 && first.textContent.includes("standing by")) el.innerHTML = "";
+  const d = document.createElement("div");
+  d.className = cls || "";
+  d.innerHTML = `<span class="dim">[${nowT()}]</span> ${html}`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function post(url, body) {
+  const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"},
+                              body: JSON.stringify(body || {})});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || ("HTTP " + r.status));
+  return j;
+}
+
+function cypherHTML(d) {
+  return `<div class="cypher">
+    <div class="cypher-head"><span>▸ CYPHER — the exact query the agent ran</span>
+      <button class="mini ghost" data-copy="${esc(encodeURIComponent(d.cypher))}">⧉ COPY</button></div>
+    <pre>${esc(d.cypher)}</pre>
+    <div class="cypher-meta">⚡ executed in ${d.ms} ms · params ${esc(JSON.stringify(d.params))}</div>
+  </div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-copy]");
+  if (!b) return;
+  navigator.clipboard.writeText(decodeURIComponent(b.dataset.copy)).then(() => {
+    b.textContent = "✓ COPIED"; setTimeout(() => b.textContent = "⧉ COPY", 1200);
+  });
+});
+const setBusy = (btn, busy) => {
+  if (busy) {
+    if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+    btn.innerHTML = "WORKING…";
+  } else {
+    btn.innerHTML = btn.dataset.label || btn.innerHTML;
+  }
+  btn.disabled = busy;
+};
+
+/* ====================== hand-rolled graph renderer ====================== */
+const NODE_STYLE = {
+  account: {r: 15, fill: "#12233d", ring: "#5aa9ff", glow: "rgba(90,169,255,.55)"},
+  frozen:  {r: 15, fill: "#1d1440", ring: "#b07fff", glow: "rgba(176,127,255,.6)"},
+  risk:     {r: 17, fill: "#2b1013", ring: "#ff3b47", glow: "rgba(255,59,71,.6)"},
+  device:  {r: 18, fill: "#241b08", ring: "#f0a832", glow: "rgba(240,168,50,.55)"},
+  ip:      {r: 13, fill: "#0a2422", ring: "#3fd4c1", glow: "rgba(63,212,193,.5)"},
+  case:    {r: 20, fill: "#2b1013", ring: "#ff3b47", glow: "rgba(255,59,71,.7)"},
+  person:  {r: 11, fill: "#1a2029", ring: "#8b98a9", glow: "rgba(139,152,169,.4)"},
+};
+
+/* Dedicated radial renderer for fraud rings: device at center,
+   accounts on a clean circle, IPs tucked below. Deterministic —
+   no force-directed randomness, fits the canvas every time. */
+function drawRing(canvas, deviceLabel, accountIds, ips) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 800, H = 340;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2 - 8;
+  const R = Math.max(70, Math.min(W / 2 - 90, H / 2 - 70));
+  const n = accountIds.length;
+
+  // account positions on circle
+  const acctPos = accountIds.map((a, i) => {
+    const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
+    return {x: cx + Math.cos(ang) * R, y: cy + Math.sin(ang) * R, label: a};
+  });
+
+  // edges: device -> accounts (hot red)
+  ctx.lineWidth = 1.6;
+  for (const p of acctPos) {
+    ctx.strokeStyle = "rgba(255,59,71,.55)";
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p.x, p.y); ctx.stroke();
+  }
+  // edges: device -> ips (teal, short stubs below device)
+  const ipPos = (ips || []).map((ip, i) => ({
+    x: cx + (i - ((ips.length - 1) / 2)) * 120, y: cy + R + 42, label: ip
+  }));
+  for (const p of ipPos) {
+    ctx.strokeStyle = "rgba(63,212,193,.5)";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(cx, cy + 18); ctx.lineTo(p.x, p.y - 13); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const node = (x, y, r, fill, ring, glow, label, sub, subColor) => {
+    ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = 14;
+    ctx.fillStyle = fill; ctx.strokeStyle = ring; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    ctx.font = "700 11px monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#e8eef5";
+    const short = label.length > 16 ? label.slice(0, 15) + "…" : label;
+    ctx.fillText(short, x, y + r + 15);
+    if (sub) {
+      ctx.font = "700 9px monospace"; ctx.fillStyle = subColor || ring;
+      ctx.fillText(sub, x, y + r + 27);
+    }
+  };
+
+  for (const p of ipPos) node(p.x, p.y, 13, "#0a2422", "#3fd4c1", "rgba(63,212,193,.5)", p.label, "SHARED IP");
+  for (const p of acctPos) node(p.x, p.y, 17, "#2b1013", "#ff3b47", "rgba(255,59,71,.6)", p.label, "MULE");
+  node(cx, cy, 20, "#241b08", "#f0a832", "rgba(240,168,50,.6)", deviceLabel, "SHARED DEVICE", "#f0a832");
+}
+
+function drawGraph(canvas, nodes, edges) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 800, H = 340;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!nodes.length) {
+    ctx.fillStyle = "#5a6678"; ctx.font = "13px monospace"; ctx.textAlign = "center";
+    ctx.fillText("no graph data", W / 2, H / 2);
+    return;
+  }
+
+  // deterministic start: ring layout
+  const cx = W / 2, cy = H / 2, R0 = Math.max(60, Math.min(W, H) / 2 - 56);
+  nodes.forEach((n, i) => {
+    const a = (i / nodes.length) * Math.PI * 2 - Math.PI / 2;
+    n.x = cx + Math.cos(a) * R0; n.y = cy + Math.sin(a) * R0;
+  });
+  const byKey = Object.fromEntries(nodes.map(n => [n.key, n]));
+
+  // force-directed relaxation (position iteration, no velocity needed)
+  for (let t = 0; t < 220; t++) {
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const f = Math.min(5200 / (d * d), 22);
+        dx /= d; dy /= d;
+        a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
+      }
+    }
+    for (const e of edges) {
+      const a = byKey[e.a], b = byKey[e.b];
+      if (!a || !b || a === b) continue;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const f = (d - 130) * 0.02;
+      dx /= d; dy /= d;
+      a.x += dx * f * d * 0.5; a.y += dy * f * d * 0.5;
+      b.x -= dx * f * d * 0.5; b.y -= dy * f * d * 0.5;
+    }
+    for (const n of nodes) { // gentle gravity + bounds
+      n.x += (cx - n.x) * 0.008; n.y += (cy - n.y) * 0.008;
+      n.x = Math.max(46, Math.min(W - 46, n.x));
+      n.y = Math.max(34, Math.min(H - 30, n.y));
+    }
+  }
+
+  // edges
+  ctx.lineWidth = 1.4;
+  for (const e of edges) {
+    const a = byKey[e.a], b = byKey[e.b];
+    if (!a || !b) continue;
+    const sa = NODE_STYLE[a.type] || NODE_STYLE.account;
+    const sb = NODE_STYLE[b.type] || NODE_STYLE.account;
+    const ang = Math.atan2(b.y - a.y, b.x - a.x);
+    const x1 = a.x + Math.cos(ang) * (sa.r + 2), y1 = a.y + Math.sin(ang) * (sa.r + 2);
+    const x2 = b.x - Math.cos(ang) * (sb.r + 4), y2 = b.y - Math.sin(ang) * (sb.r + 4);
+    ctx.strokeStyle = e.hot ? "rgba(255,59,71,.85)" : "rgba(139,152,169,.4)";
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    // arrowhead
+    ctx.fillStyle = e.hot ? "rgba(255,59,71,.9)" : "rgba(139,152,169,.55)";
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 8 * Math.cos(ang - 0.42), y2 - 8 * Math.sin(ang - 0.42));
+    ctx.lineTo(x2 - 8 * Math.cos(ang + 0.42), y2 - 8 * Math.sin(ang + 0.42));
+    ctx.closePath(); ctx.fill();
+    // edge label
+    if (e.label) {
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      ctx.font = "10.5px monospace"; ctx.textAlign = "center";
+      const w = ctx.measureText(e.label).width + 10;
+      ctx.fillStyle = "rgba(4,6,10,.88)";
+      ctx.fillRect(mx - w / 2, my - 8, w, 15);
+      ctx.fillStyle = e.hot ? "#ff8f96" : "#3ddc84";
+      ctx.fillText(e.label, mx, my + 4);
+    }
+  }
+
+  // nodes
+  for (const n of nodes) {
+    const s = NODE_STYLE[n.type] || NODE_STYLE.account;
+    ctx.save();
+    ctx.shadowColor = s.glow; ctx.shadowBlur = 14;
+    ctx.fillStyle = s.fill;
+    ctx.strokeStyle = s.ring; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(n.x, n.y, s.r, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+    ctx.font = "700 11px monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = "#e8eef5";
+    const label = n.label.length > 14 ? n.label.slice(0, 13) + "…" : n.label;
+    ctx.fillText(label, n.x, n.y + s.r + 15);
+    if (n.sub) {
+      ctx.font = "700 9px monospace"; ctx.fillStyle = s.ring;
+      ctx.fillText(n.sub, n.x, n.y + s.r + 27);
+    }
+  }
+}
+
+/* ============================== stats ============================== */
+async function loadStats() {
+  try {
+    const r = await fetch("/api/graph/stats");
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || "stats failed");
+    const s = d.rows[0] || {};
+    $("stPersons").textContent = s.persons ?? "–";
+    $("stAccounts").textContent = s.accounts ?? "–";
+    $("stTransfers").textContent = s.transfers ?? "–";
+    $("stFrozen").textContent = s.frozen ?? "–";
+    $("stCases").textContent = s.cases ?? "–";
+    $("connDot").className = "dot on"; $("connTxt").textContent = "GRAPH CONNECTED";
+  } catch (e) {
+    $("connDot").className = "dot off"; $("connTxt").textContent = "GRAPH UNREACHABLE";
+    agentLog(`⚠ stats failed: ${esc(e.message)} — is FalkorDB running?`, "warn");
+  }
+}
+
+/* ============================== STEP 01 · trace ============================== */
+$("depth").oninput = () => { $("depthVal").textContent = $("depth").value; };
+
+$("btnTrace").onclick = async () => {
+  const acct = $("acct").value.trim(), depth = +$("depth").value;
+  if (!acct) return;
+  const btn = $("btnTrace"); setBusy(btn, true);
+  agentLog(`▸ <b>trace_hops</b>(account="${esc(acct)}", depth=${depth}) — asking the graph…`, "cmd");
+  try {
+    const d = await post("/api/tools/trace_hops", {account: acct, depth});
+    agentLog(`✓ <b>${d.rows.length}</b> money-trail path(s) · ${d.ms} ms — the graph decided`, "ok");
+
+    const p = d.rows[0].path;
+    const nodeByInternal = {};
+    p.nodes.forEach(n => { nodeByInternal[n.id] = n; });
+    const nodes = p.nodes.map(n => ({
+      key: n.id, label: n.props.id,
+      type: n.props.frozen ? "frozen" : (n.props.risk >= 90 ? "risk" : "account"),
+      sub: n.props.frozen ? "FROZEN" : (n.props.risk >= 90 ? "RISK " + n.props.risk : "")
+    }));
+    const edges = p.edges.map(e => {
+      const s = nodeByInternal[e.src], t = nodeByInternal[e.dst];
+      const hot = (s && s.props.risk >= 90) || (t && t.props.risk >= 90);
+      return {a: e.src, b: e.dst, label: fmtINR(e.props.amount), hot};
+    });
+    drawGraph($("traceCanvas"), nodes, edges);
+
+    let h = "";
+    d.rows.slice(0, 8).forEach((r, i) => {
+      h += `<div class="hop"><span class="hop-n">#${i + 1}</span>`;
+      r.path.nodes.forEach((n, j) => {
+        const cls = n.props.frozen ? "frozen" : (n.props.risk >= 90 ? "risk" : "");
+        h += `<span class="pill ${cls}">${esc(n.props.id)}</span>`;
+        if (j < r.path.edges.length)
+          h += `<span class="hop-edge">─ ${fmtINR(r.path.edges[j].props.amount)} ─▶</span>`;
+      });
+      h += "</div>";
+    });
+    if (d.rows.length > 8)
+      h += `<div class="cypher-meta">…and ${d.rows.length - 8} more paths (capped at 25 by the query)</div>`;
+    $("traceList").innerHTML = h;
+    $("traceCypher").innerHTML = cypherHTML(d);
+    $("traceResults").hidden = false;
+  } catch (e) {
+    agentLog(`✕ trace failed: ${esc(e.message)}`, "warn");
+    $("traceResults").hidden = false;
+    $("traceList").innerHTML = `<div class="err">⚠ ${esc(e.message)}</div>`;
+    $("traceCypher").innerHTML = "";
+  }
+  setBusy(btn, false);
+};
+
+/* ============================== STEP 02 · rings ============================== */
+const staged = new Set();   // accounts staged for the freeze action
+
+function ringCard(r, i) {
+  const ids = r.account_ids.map(esc).join(" ");
+  return `<div class="ring">
+    <div class="ring-top">
+      <span class="ring-title">🚨 RING ${i + 1} — ${r.ring_size} accounts</span>
+    </div>
+    <div class="kv">shared device <b>${esc(r.device_id)}</b></div>
+    <div class="kv">shared IPs <b>${r.ips.map(esc).join(", ")}</b></div>
+    <div class="hop" style="margin-top:8px">${r.account_ids.map(a => `<span class="pill risk">${esc(a)}</span>`).join("")}</div>
+    <label class="stage-check"><input type="checkbox" data-ring="${i}" ${r.account_ids.every(a => staged.has(a)) ? "checked" : ""}>
+      stage these ${r.ring_size} accounts for freeze</label>
+  </div>`;
+}
+
+function renderStaged() {
+  const el = $("staged");
+  if (!staged.size) {
+    el.innerHTML = `<span class="staged-empty">no accounts staged — tick “stage for freeze” on a ring or hub above, or add manually.</span>`;
+    return;
+  }
+  el.innerHTML = [...staged].map(a =>
+    `<span class="staged-chip">${esc(a)}<button data-unstage="${esc(a)}" title="remove">✕</button></span>`).join("");
+}
+document.addEventListener("click", e => {
+  const u = e.target.closest("[data-unstage]");
+  if (u) { staged.delete(u.dataset.unstage); renderStaged(); syncRingChecks(); }
+});
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-ring]");
+  if (c && window._rings && window._rings[+c.dataset.ring]) {
+    const ids = window._rings[+c.dataset.ring].account_ids;
+    ids.forEach(a => c.checked ? staged.add(a) : staged.delete(a));
+    renderStaged();
+    agentLog(c.checked ? `▸ staged ring ${+c.dataset.ring + 1} (${ids.length} accounts) for freeze` : `▸ un-staged ring ${+c.dataset.ring + 1}`, "dim");
+  }
+  const p = e.target.closest("[data-hub]");
+  if (p) {
+    p.checked ? staged.add(p.dataset.hub) : staged.delete(p.dataset.hub);
+    renderStaged(); syncRingChecks();
+  }
+});
+function syncRingChecks() {
+  document.querySelectorAll("[data-ring]").forEach(c => {
+    const r = window._rings && window._rings[+c.dataset.ring];
+    if (r) c.checked = r.account_ids.every(a => staged.has(a));
+  });
+}
+
+$("btnRing").onclick = async () => {
+  const btn = $("btnRing"); setBusy(btn, true);
+  agentLog(`▸ <b>find_ring</b>() — scanning for shared-device fingerprints…`, "cmd");
+  try {
+    const d = await post("/api/tools/find_ring");
+    window._rings = d.rows;
+    const n = d.rows.length;
+    agentLog(n ? `✓ <b>${n}</b> fraud ring(s) detected · ${d.ms} ms` : `✓ scan clean — no rings · ${d.ms} ms`, n ? "ok" : "dim");
+
+    if (n) {
+      // visualize the biggest ring with the dedicated radial renderer
+      const r = d.rows[0];
+      drawRing($("ringCanvas"), r.device_id, r.account_ids, r.ips);
+      $("ringList").innerHTML = d.rows.map(ringCard).join("");
+    } else {
+      $("ringList").innerHTML = `<div class="okline">✓ no shared-device rings in this graph.</div>`;
+      drawGraph($("ringCanvas"), [], []);
+    }
+    $("ringCypher").innerHTML = cypherHTML(d);
+    $("ringResults").hidden = false;
+  } catch (e) {
+    agentLog(`✕ ring scan failed: ${esc(e.message)}`, "warn");
+    $("ringResults").hidden = false;
+    $("ringList").innerHTML = `<div class="err">⚠ ${esc(e.message)}</div>`;
+    $("ringCypher").innerHTML = "";
+  }
+  setBusy(btn, false);
+};
+
+/* ============================== STEP 03 · pagerank ============================== */
+$("btnPR").onclick = async () => {
+  const btn = $("btnPR"); setBusy(btn, true);
+  agentLog(`▸ <b>pagerank_hub</b>() — ranking mule-network hubs…`, "cmd");
+  try {
+    const d = await post("/api/tools/pagerank_hub", {limit: 10});
+    const rows = d.rows;
+    const max = Math.max(...rows.map(r => r.score), 1e-9);
+    agentLog(`✓ top hub: <b>${esc(rows[0]?.account_id)}</b> (score ${Number(rows[0]?.score).toFixed(4)}) · ${d.ms} ms`, "ok");
+    let h = `<table class="rank"><tr><th>#</th><th>ACCOUNT</th><th>SCORE</th><th></th><th>SIGNALS</th><th></th></tr>`;
+    rows.forEach((r, i) => {
+      const pct = (r.score / max * 100).toFixed(1);
+      const sig = [
+        r.risk >= 90 ? `<span class="risk-badge">RISK ${r.risk}</span>` : "",
+        r.frozen ? `<span class="frozen-badge">FROZEN</span>` : ""
+      ].filter(Boolean).join(" · ") || `<span style="color:var(--faint)">—</span>`;
+      h += `<tr><td style="color:var(--faint)">${i + 1}</td>
+        <td><span class="pill ${r.frozen ? "frozen" : (r.risk >= 90 ? "risk" : "")}">${esc(r.account_id)}</span></td>
+        <td><div class="bar"><i style="width:${pct}%"></i></div></td>
+        <td style="color:var(--dim)">${Number(r.score).toFixed(4)}</td>
+        <td>${sig}</td>
+        <td><label class="stage-check" style="margin:0"><input type="checkbox" data-hub="${esc(r.account_id)}" ${staged.has(r.account_id) ? "checked" : ""}> stage</label></td></tr>`;
+    });
+    $("prTable").innerHTML = h + "</table>";
+    $("prCypher").innerHTML = cypherHTML(d);
+    $("prResults").hidden = false;
+  } catch (e) {
+    agentLog(`✕ pagerank failed: ${esc(e.message)}`, "warn");
+    $("prResults").hidden = false;
+    $("prTable").innerHTML = `<div class="err">⚠ ${esc(e.message)}</div>`;
+    $("prCypher").innerHTML = "";
+  }
+  setBusy(btn, false);
+};
+
+/* ============================== STEP 04 · freeze (the climax) ============================== */
+$("btnAddManual").onclick = () => {
+  $("manualIds").value.split(",").map(s => s.trim()).filter(Boolean)
+    .forEach(a => staged.add(a));
+  $("manualIds").value = "";
+  renderStaged(); syncRingChecks();
+};
+
+let freezeArmed = false;
+$("btnFreeze").onclick = async () => {
+  const btn = $("btnFreeze");
+  if (!staged.size) {
+    agentLog(`⚠ freeze aborted — nothing staged. Stage a ring or hub first.`, "warn");
+    return;
+  }
+  if (!freezeArmed) {  // two-step: arm, then fire — dramatic AND safe
+    freezeArmed = true;
+    btn.classList.add("armed");
+    btn.textContent = `⚠ CONFIRM FREEZE OF ${staged.size} ACCOUNT(S)?`;
+    agentLog(`▸ freeze ARMED for ${staged.size} account(s) — click again to execute`, "act");
+    setTimeout(() => {
+      if (freezeArmed) {
+        freezeArmed = false; btn.classList.remove("armed");
+        btn.textContent = "⚡ EXECUTE FREEZE";
+        agentLog(`▸ freeze disarmed (timeout)`, "dim");
+      }
+    }, 6000);
+    return;
+  }
+  freezeArmed = false; btn.classList.remove("armed");
+  btn.textContent = "⚡ EXECUTE FREEZE";
+  setBusy(btn, true);
+
+  const accounts = [...staged];
+  const reason = $("reason").value.trim() || "Suspected fraud ring — agent action";
+  const investigator = $("investigator").value.trim() || "Agent-01";
+  agentLog(`▸ <b class="act">FREEZE EXECUTING</b> — ${accounts.length} account(s), investigator "${esc(investigator)}"…`, "act");
+  try {
+    const d = await post("/api/actions/freeze",
+      {accounts, reason, investigator});
+    const row = d.rows[0] || {};
+    agentLog(`✓ <b>CASE ${esc(row.case_id)}</b> written — ${row.frozen_count} account(s) frozen · ${d.ms} ms`, "ok");
+
+    $("caseFile").innerHTML = `
+      <div class="stamp">FROZEN</div>
+      <h3>CASE FILE — WRITTEN TO THE GRAPH</h3>
+      <div class="case-id"><span>${esc(row.case_id)}</span></div>
+      <div class="case-grid">
+        <div class="kv">accounts frozen<br><b>${(row.frozen_now || []).map(esc).join(", ") || "—"}</b></div>
+        <div class="kv">investigator<br><b>${esc(investigator)}</b></div>
+        <div class="kv">reason<br><b>${esc(reason)}</b></div>
+        <div class="kv">graph write<br><b>(:Case)-[:TARGETS]->(:Account)</b></div>
+      </div>`;
+
+    // visualize the case file: case node -> frozen accounts
+    const nodes = [{key: "case", label: row.case_id, type: "case", sub: "CASE FILE"}];
+    (row.frozen_now || []).forEach(a =>
+      nodes.push({key: "a:" + a, label: a, type: "frozen", sub: "FROZEN"}));
+    const edges = (row.frozen_now || []).map(a => ({a: "case", b: "a:" + a, hot: true, label: "TARGETS"}));
+    drawGraph($("freezeCanvas"), nodes, edges);
+
+    $("freezeCypher").innerHTML = cypherHTML(d);
+    $("freezeResults").hidden = false;
+    $("freezeResults").scrollIntoView({behavior: "smooth", block: "nearest"});
+
+    accounts.forEach(a => staged.delete(a));
+    renderStaged(); syncRingChecks();
+    loadStats();  // frozen/case counters tick up in the header
+  } catch (e) {
+    agentLog(`✕ freeze failed: ${esc(e.message)}`, "warn");
+    $("freezeResults").hidden = false;
+    $("caseFile").innerHTML = `<div class="err">⚠ ${esc(e.message)}</div>`;
+    $("freezeCypher").innerHTML = "";
+  }
+  setBusy(btn, false);
+};
+
+/* ============================== init ============================== */
+renderStaged();
+loadStats();
+agentLog(`agent online — graph <b>${esc("fraudlens")}</b>. run an investigation step below.`, "dim");
+</script>
+</body>
+</html>

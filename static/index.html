@@ -359,7 +359,7 @@
           <div><span class="cmd">▸ find_ring()</span></div>
           <div><span class="ok">✓ 3 fraud rings detected · 247 ms</span></div>
           <div><span class="cmd">▸ pagerank_hub()</span></div>
-          <div><span class="ok">✓ top hub: A-4023 · kingpin found</span></div>
+          <div><span class="ok">✓ top hub: A-3018 · kingpin found</span></div>
           <div><span class="act">▸ FREEZE EXECUTING — 5 accounts…</span></div>
           <div><span class="ok">✓ CASE written to graph · FROZEN 5</span></div>
         </div>
@@ -519,6 +519,7 @@
       <div class="tool-num">04</div>
       <h2><span class="k">▸</span> EXECUTE FREEZE <span style="color:var(--faint);font-size:11px;font-weight:500">— THE AGENT ACTS</span></h2>
       <div class="desc">Reading the graph was reconnaissance. <b>This is the action.</b> The agent freezes every staged account and writes a <b>(:Case)-[:TARGETS]->(:Account)</b> case file into the graph — memory the next investigation builds on.</div>
+      <div style="margin:12px 0"><button id="btnPDF2" class="btn btn-outline btn-sm"><i data-lucide="file-down" style="width:14px;height:14px;vertical-align:-2px"></i> EXPORT REPORT</button> <span style="font-size:12px;color:var(--dim)">(run all steps first for full report)</span></div>
       <div class="controls no-print">
         <input type="text" id="manualIds" spellcheck="false" placeholder="add manually: A-4010,A-4011">
         <button id="btnAddManual" class="btn btn-ghost btn-sm">+ ADD</button>
@@ -1082,7 +1083,7 @@ $("btnFreeze").onclick = async () => {
 };
 
 /* ============ PDF export ============ */
-$("btnPDF").onclick = () => {
+$("btnPDF").onclick = $("btnPDF2").onclick = () => {
   try {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();

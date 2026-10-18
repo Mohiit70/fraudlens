@@ -1038,63 +1038,76 @@ $("btnFreeze").onclick = async () => {
 /* ============ PDF export ============ */
 $("btnPDF").onclick = () => {
   try {
-  const fz = window._lastFreeze, rg = window._lastRings, tr = window._lastTrace, pr = window._lastPR;
-  const row = (fz && fz.d && fz.d.rows && fz.d.rows[0]) || {};
-  let h = `<h1>◉ FraudLens — Investigation Report</h1>
-    <p class="meta">Generated ${new Date().toLocaleString("en-IN")} · Synthetic demo data · WeMakeDevs × FalkorDB "Graph Hacks"</p>`;
-  if (tr) {
-    h += `<h2>1 · Money Trail — ${esc(tr.acct)} (depth ${tr.depth})</h2>
-      <p class="meta">${tr.d.rows.length} path(s) · ${tr.d.ms} ms</p><pre>${esc(tr.d.cypher)}</pre>
-      <table><tr><th>#</th><th>Path</th></tr>`;
-    tr.d.rows.slice(0, 10).forEach((r, i) => {
-      h += `<tr><td>${i + 1}</td><td>${r.path.nodes.map(n => esc(n.props.id)).join(" → ")}</td></tr>`;
-    });
-    h += `</table>`;
-  }
-  if (rg) {
-    h += `<h2>2 · Fraud Rings — ${rg.d.rows.length} detected</h2>
-      <p class="meta">${rg.d.ms} ms</p><pre>${esc(rg.d.cypher)}</pre>
-      <table><tr><th>Ring</th><th>Accounts</th><th>Device</th><th>IPs</th></tr>`;
-    rg.d.rows.forEach((r, i) => {
-      h += `<tr><td>${i + 1}</td><td>${r.account_ids.map(esc).join(", ")}</td><td>${esc(r.device_id)}</td><td>${r.ips.map(esc).join(", ")}</td></tr>`;
-    });
-    h += `</table>`;
-  }
-  if (pr) {
-    h += `<h2>3 · Hub Ranking (PageRank)</h2><p class="meta">${pr.d.ms} ms</p><pre>${esc(pr.d.cypher)}</pre>
-      <table><tr><th>#</th><th>Account</th><th>Score</th></tr>`;
-    pr.d.rows.slice(0, 10).forEach((r, i) => {
-      h += `<tr><td>${i + 1}</td><td>${esc(r.account_id)}</td><td>${Number(r.score).toFixed(4)}</td></tr>`;
-    });
-    h += `</table>`;
-  }
-  if (fz) {
-    h += `<h2>4 · Freeze Action — CASE ${esc(row.case_id || "")}</h2>
-      <table><tr><th>Field</th><th>Value</th></tr>
-      <tr><td>Accounts frozen</td><td>${(row.frozen_now || []).map(esc).join(", ")}</td></tr>
-      <tr><td>Investigator</td><td>${esc(fz.investigator)}</td></tr>
-      <tr><td>Reason</td><td>${esc(fz.reason)}</td></tr>
-      <tr><td>Graph write</td><td>(:Case)-[:TARGETS]-&gt;(:Account)</td></tr>
-      </table><pre>${esc(fz.d.cypher)}</pre>`;
-  }
-  h += `<p class="meta" style="margin-top:30px">FraudLens · graph-powered fraud investigation · every query above is the exact Cypher the agent executed.</p>`;
-  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FraudLens Investigation Report</title>
-<style>body{font-family:-apple-system,"Segoe UI",Inter,Roboto,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#111}
-h1{font-size:26px;border-bottom:3px solid #dc2626;padding-bottom:12px}
-h2{font-size:18px;color:#dc2626;margin-top:28px}.meta{color:#666;font-size:12px}
-table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
-th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}th{background:#f5f5f5}
-pre{background:#f5f5f5;padding:12px;border-radius:8px;font-size:11px;overflow-x:auto;white-space:pre-wrap}</style>
+    const fz = window._lastFreeze, rg = window._lastRings, tr = window._lastTrace, pr = window._lastPR;
+    let h = `<h1>FraudLens — Investigation Report</h1>
+      <p class="meta">Generated ${new Date().toLocaleString("en-IN")} · FraudLens demo</p>`;
+
+    try {
+      if (tr && tr.d && tr.d.rows && tr.d.rows.length) {
+        h += `<h2>1 · Money Trail — ${esc(tr.acct || "?")}</h2><p class="meta">${tr.d.rows.length} paths</p><table><tr><th>#</th><th>Path</th></tr>`;
+        tr.d.rows.slice(0, 10).forEach((r, i) => {
+          let pathStr = "[path]";
+          try { pathStr = r.path.nodes.map(n => esc(n.props.id)).join(" → "); } catch(e) {}
+          h += `<tr><td>${i+1}</td><td>${pathStr}</td></tr>`;
+        });
+        h += `</table><pre>${esc(tr.d.cypher || "")}</pre>`;
+      }
+    } catch(e) {}
+
+    try {
+      if (rg && rg.d && rg.d.rows && rg.d.rows.length) {
+        h += `<h2>2 · Fraud Rings — ${rg.d.rows.length} detected</h2><table><tr><th>Ring</th><th>Accounts</th></tr>`;
+        rg.d.rows.forEach((r, i) => {
+          h += `<tr><td>${i+1}</td><td>${(r.account_ids || []).map(esc).join(", ")}</td></tr>`;
+        });
+        h += `</table><pre>${esc(rg.d.cypher || "")}</pre>`;
+      }
+    } catch(e) {}
+
+    try {
+      if (pr && pr.d && pr.d.rows && pr.d.rows.length) {
+        h += `<h2>3 · PageRank Hubs</h2><table><tr><th>#</th><th>Account</th><th>Score</th></tr>`;
+        pr.d.rows.slice(0, 10).forEach((r, i) => {
+          h += `<tr><td>${i+1}</td><td>${esc(r.account_id || r.id || "?")}</td><td>${r.score || "?"}</td></tr>`;
+        });
+        h += `</table>`;
+      }
+    } catch(e) {}
+
+    try {
+      if (fz) {
+        const row = (fz.d && fz.d.rows && fz.d.rows[0]) || {};
+        h += `<h2>4 · Freeze Action</h2><table>
+          <tr><td>Case</td><td>${esc(row.case_id || "—")}</td></tr>
+          <tr><td>Frozen</td><td>${(row.frozen_now || fz.accounts || []).map(esc).join(", ") || "—"}</td></tr>
+          <tr><td>Investigator</td><td>${esc(fz.investigator || "—")}</td></tr></table>`;
+        if (fz.d && fz.d.cypher) h += `<pre>${esc(fz.d.cypher)}</pre>`;
+      }
+    } catch(e) {}
+
+    h += `<p class="meta">FraudLens · graph-powered fraud investigation</p>`;
+
+    const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FraudLens Report</title>
+<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#111}
+h1{font-size:24px;border-bottom:3px solid #dc2626;padding-bottom:10px}
+h2{font-size:18px;color:#dc2626;margin-top:24px}.meta{color:#666;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}
+pre{background:#f5f5f5;padding:10px;border-radius:6px;font-size:11px;overflow-x:auto;white-space:pre-wrap}</style>
 </head><body>${h}</body></html>`;
-  const blob = new Blob([doc], {type: "text/html"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `fraudlens-report-${new Date().toISOString().slice(0,10)}.html`;
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-  agentLog(`▸ investigation report downloaded (open in browser → Print → Save as PDF)`, "ok");
+
+    const blob = new Blob([doc], {type: "text/html"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fraudlens-report.html";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    agentLog(`▸ report downloaded — open it and Print → Save as PDF`, "ok");
   } catch(e) {
-    agentLog(`▸ report failed: ${e.message} — run Investigate/Rings/Freeze first`, "err");
+    agentLog(`▸ download failed: ${esc(e.message)}`, "err");
   }
 };
 </script>

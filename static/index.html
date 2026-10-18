@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FraudLens — Graph-Powered Fraud Investigation</title>
 <meta name="description" content="FraudLens traces stolen money, hunts mule rings, and freezes fraud accounts — a graph-powered investigation agent.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
   /* ============ THEME TOKENS ============ */
   :root, [data-theme="light"]{
@@ -19,7 +23,7 @@
     --purple:#7c3aed; --purple-bg:#f5f3ff;
     --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 12px rgba(15,23,42,.06);
     --shadow-lg:0 8px 30px rgba(15,23,42,.12);
-    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   [data-theme="dark"]{
@@ -286,8 +290,7 @@
   </div></nav>
 
   <header class="hero"><div class="wrap">
-    <div class="hero-badge">🕸️ WeMakeDevs × FalkorDB — Graph Hacks Hackathon</div>
-    <h1>See fraud the way<br>criminals <span class="hl">hide</span> it —<br>as a network.</h1>
+    <h1>Uncover fraud<br>hidden in <span class="hl">plain sight.</span></h1>
     <p class="sub">FraudLens is a graph-powered investigation agent. It traces stolen money across accounts, hunts mule rings by their shared fingerprints, ranks laundering kingpins — then <b>freezes</b> them. Every decision shows its exact database query.</p>
     <div class="hero-cta">
       <button class="btn btn-primary" onclick="showApp()">🔍 Start Investigating</button>
@@ -324,17 +327,17 @@
     <p class="lead">Fraud isn't a row in a spreadsheet. It's a network — and investigators are still fighting it with tables.</p>
     <div class="prob-grid">
       <div class="prob-card alert">
-        <div class="icon">💸</div>
+        <div class="icon"><i data-lucide="banknote" style="width:30px;height:30px;color:var(--red)"></i></div>
         <h3>Billions lost to mule networks</h3>
         <p>Organized rings move dirty money through chains of "mule" accounts, keeping each transfer just under reporting thresholds. The pattern is invisible in tabular reports.</p>
       </div>
       <div class="prob-card">
-        <div class="icon">🐌</div>
+        <div class="icon"><i data-lucide="timer" style="width:30px;height:30px;color:var(--amber)"></i></div>
         <h3>6 hours per account</h3>
         <p>A human analyst tracing one suspect through spreadsheets takes half a workday. By the time the trail is mapped, the money has already left the system.</p>
       </div>
       <div class="prob-card">
-        <div class="icon">📊</div>
+        <div class="icon"><i data-lucide="bar-chart-3" style="width:30px;height:30px;color:var(--blue)"></i></div>
         <h3>Dashboards only watch</h3>
         <p>Existing tools raise alerts and build charts — but nobody acts. The investigator still has to manually freeze accounts across disconnected systems.</p>
       </div>
@@ -347,25 +350,25 @@
     <div class="steps">
       <div class="step-card">
         <div class="step-num">1</div>
-        <h3>🔍 Trace the money</h3>
+        <h3><i data-lucide="search" style="width:16px;height:16px;vertical-align:-2px"></i> Trace the money</h3>
         <p>Enter a suspect account. The agent follows transfers N hops deep — a traversal SQL can't express without painful recursive queries.</p>
         <code>MATCH p=(a)-[:TRANSFERRED*1..4]→(b)</code>
       </div>
       <div class="step-card">
         <div class="step-num">2</div>
-        <h3>🕸️ Hunt the ring</h3>
+        <h3><i data-lucide="network" style="width:16px;height:16px;vertical-align:-2px"></i> Hunt the ring</h3>
         <p>Mule networks reuse devices. The agent finds 4+ accounts on one device sharing IPs — the classic fraud-ring fingerprint.</p>
         <code>MATCH (d:Device)←[:USES_DEVICE]-(a)</code>
       </div>
       <div class="step-card">
         <div class="step-num">3</div>
-        <h3>🎯 Find the hub</h3>
+        <h3><i data-lucide="target" style="width:16px;height:16px;vertical-align:-2px"></i> Find the hub</h3>
         <p>PageRank over money-flow edges surfaces the laundering kingpin — the account everything flows through. No labels needed.</p>
         <code>CALL algo.pageRank() YIELD node</code>
       </div>
       <div class="step-card">
         <div class="step-num">4</div>
-        <h3>⚡ Execute freeze</h3>
+        <h3><i data-lucide="zap" style="width:16px;height:16px;vertical-align:-2px"></i> Execute freeze</h3>
         <p>The agent doesn't just report — it acts. Accounts freeze, and a case file is written back into the graph as institutional memory.</p>
         <code>SET a.frozen=true CREATE (:Case)</code>
       </div>
@@ -376,12 +379,12 @@
     <h2>Why it's different</h2>
     <p class="lead">Built for investigators, not dashboard-watchers.</p>
     <div class="feat-grid">
-      <div class="feat"><h3>⚡ Acts, not just alerts</h3><p>Two-step freeze writes <b>frozen=true</b> and a <b>(:Case)</b> node straight into the graph. The only mutation the API allows.</p></div>
-      <div class="feat"><h3>🔎 Every query visible</h3><p>Each tool panel shows the exact Cypher with a copy button. No black box — see precisely what the agent decided.</p></div>
-      <div class="feat"><h3>🧠 Graph-native memory</h3><p>Case files persist as nodes. The next investigation starts from what the last one learned.</p></div>
-      <div class="feat"><h3>📄 One-click PDF report</h3><p>Export the full investigation — traces, rings, case file, queries — as a printable PDF for compliance.</p></div>
-      <div class="feat"><h3>🌓 Light &amp; dark</h3><p>Professional light theme for the office, dark ops-mode for the night shift. One toggle.</p></div>
-      <div class="feat"><h3>🚀 Zero friction</h3><p>No signup. Open the URL, type <b>A-4000</b>, hit Investigate. Judges are investigating in 10 seconds.</p></div>
+      <div class="feat"><h3><i data-lucide="zap" style="width:16px;height:16px;vertical-align:-2px;color:var(--red)"></i> Acts, not just alerts</h3><p>Two-step freeze writes <b>frozen=true</b> and a <b>(:Case)</b> node straight into the graph. The only mutation the API allows.</p></div>
+      <div class="feat"><h3><i data-lucide="code-2" style="width:16px;height:16px;vertical-align:-2px;color:var(--blue)"></i> Every query visible</h3><p>Each tool panel shows the exact Cypher with a copy button. No black box — see precisely what the agent decided.</p></div>
+      <div class="feat"><h3><i data-lucide="brain" style="width:16px;height:16px;vertical-align:-2px;color:var(--purple)"></i> Graph-native memory</h3><p>Case files persist as nodes. The next investigation starts from what the last one learned.</p></div>
+      <div class="feat"><h3><i data-lucide="file-text" style="width:16px;height:16px;vertical-align:-2px;color:var(--amber)"></i> One-click PDF report</h3><p>Export the full investigation — traces, rings, case file, queries — as a printable PDF for compliance.</p></div>
+      <div class="feat"><h3><i data-lucide="moon" style="width:16px;height:16px;vertical-align:-2px;color:var(--dim)"></i> Light &amp; dark</h3><p>Professional light theme for the office, dark ops-mode for the night shift. One toggle.</p></div>
+      <div class="feat"><h3><i data-lucide="rocket" style="width:16px;height:16px;vertical-align:-2px;color:var(--green)"></i> Zero friction</h3><p>No signup. Open the URL, type <b>A-4000</b>, hit Investigate. Investigating in 10 seconds.</p></div>
     </div>
   </div></section>
 
@@ -392,8 +395,8 @@
   </div></div>
 
   <footer class="site"><div class="wrap">
-    <div><b style="color:var(--txt)">FRAUDLENS</b> — WeMakeDevs × FalkorDB "Graph Hacks", Track 01 + 02.<br>Synthetic data: 75 persons · 95 accounts · ~660 transfers · 3 planted rings.</div>
-    <div>Built with AI assistance (disclosed). MIT licensed.</div>
+    <div><b style="color:var(--txt)">FRAUDLENS</b> — graph-powered fraud investigation.</div>
+    <div>Built by <b style="color:var(--txt)">Mohit Bisht</b> · <a href="https://github.com/Mohiit70/fraudlens" style="color:var(--blue);text-decoration:none">GitHub <i data-lucide="github" style="width:14px;height:14px;vertical-align:-2px"></i></a></div>
   </div></footer>
 </div>
 
@@ -485,7 +488,7 @@
         <canvas class="graph no-print" id="freezeCanvas"></canvas>
         <div id="freezeCypher"></div>
         <div class="export-bar no-print">
-          <button id="btnPDF" class="btn btn-outline btn-sm">📄 EXPORT INVESTIGATION PDF</button>
+          <button id="btnPDF" class="btn btn-outline btn-sm"><i data-lucide="file-down" style="width:14px;height:14px;vertical-align:-2px"></i> EXPORT REPORT</button>
         </div>
       </div>
     </section>
@@ -549,6 +552,9 @@ function drawMiniGraph(){
   el.innerHTML = h;
 }
 drawMiniGraph();
+
+/* ============ lucide icons ============ */
+if (window.lucide) lucide.createIcons();
 
 /* ============ helpers ============ */
 const $ = id => document.getElementById(id);
@@ -661,6 +667,48 @@ function drawRing(canvas, deviceLabel, accountIds, ips) {
   for (const p of acctPos) node(p.x, p.y, P.risk, p.label, "MULE");
   node(cx, cy, P.device, deviceLabel, "SHARED DEVICE");
 }
+/* Dedicated radial renderer for the freeze case graph:
+   case node in center, frozen accounts on a clean circle. */
+function drawCaseGraph(canvas, caseId, accountIds) {
+  const P = pal();
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 800, H = 340;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2;
+  const R = Math.max(70, Math.min(W / 2 - 90, H / 2 - 70));
+  const n = accountIds.length;
+  const acctPos = accountIds.map((a, i) => {
+    const ang = (i / Math.max(n, 1)) * Math.PI * 2 - Math.PI / 2;
+    return {x: cx + Math.cos(ang) * R, y: cy + Math.sin(ang) * R, label: a};
+  });
+  ctx.lineWidth = 1.8;
+  for (const p of acctPos) {
+    ctx.strokeStyle = P.edgeHot;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p.x, p.y); ctx.stroke();
+  }
+  const node = (x, y, s, label, sub) => {
+    ctx.save(); ctx.shadowColor = s.glow; ctx.shadowBlur = 16;
+    ctx.fillStyle = s.fill; ctx.strokeStyle = s.ring; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(x, y, s.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    ctx.font = "700 11px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = P.txt;
+    const short = label.length > 18 ? label.slice(0, 17) + "\u2026" : label;
+    ctx.fillText(short, x, y + s.r + 15);
+    if (sub) { ctx.font = "700 9px sans-serif"; ctx.fillStyle = s.ring; ctx.fillText(sub, x, y + s.r + 27); }
+  };
+  for (const p of acctPos) node(p.x, p.y, P.frozen, p.label, "FROZEN");
+  node(cx, cy, P.case, caseId, "CASE FILE");
+  ctx.font = "600 10px sans-serif"; ctx.textAlign = "center";
+  for (const p of acctPos) {
+    const mx = (cx + p.x) / 2, my = (cy + p.y) / 2;
+    const w = ctx.measureText("TARGETS").width + 10;
+    ctx.fillStyle = P.edgeLblBg; ctx.fillRect(mx - w / 2, my - 8, w, 15);
+    ctx.fillStyle = P.hotTxt; ctx.fillText("TARGETS", mx, my + 4);
+  }
+}
 function drawGraph(canvas, nodes, edges) {
   const P = pal();
   const dpr = window.devicePixelRatio || 1;
@@ -680,12 +728,12 @@ function drawGraph(canvas, nodes, edges) {
     n.x = cx + Math.cos(a) * R0; n.y = cy + Math.sin(a) * R0;
   });
   const byKey = Object.fromEntries(nodes.map(n => [n.key, n]));
-  for (let t = 0; t < 220; t++) {
+  for (let t = 0; t < 320; t++) {
     for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
       const a = nodes[i], b = nodes[j];
       let dx = a.x - b.x, dy = a.y - b.y;
       const d = Math.hypot(dx, dy) || 1;
-      const f = Math.min(5200 / (d * d), 22);
+      const f = Math.min(9000 / (d * d), 30);
       dx /= d; dy /= d;
       a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
     }
@@ -694,7 +742,7 @@ function drawGraph(canvas, nodes, edges) {
       if (!a || !b || a === b) continue;
       let dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy) || 1;
-      const f = (d - 130) * 0.02;
+      const f = (d - 170) * 0.02;
       dx /= d; dy /= d;
       a.x += dx * f * d * 0.5; a.y += dy * f * d * 0.5;
       b.x -= dx * f * d * 0.5; b.y -= dy * f * d * 0.5;
@@ -970,10 +1018,7 @@ $("btnFreeze").onclick = async () => {
         <div class="kv">reason<br><b>${esc(reason)}</b></div>
         <div class="kv">graph write<br><b>(:Case)-[:TARGETS]->(:Account)</b></div>
       </div>`;
-    const nodes = [{key: "case", label: row.case_id, type: "case", sub: "CASE FILE"}];
-    (row.frozen_now || []).forEach(a => nodes.push({key: "a:" + a, label: a, type: "frozen", sub: "FROZEN"}));
-    const edges = (row.frozen_now || []).map(a => ({a: "case", b: "a:" + a, hot: true, label: "TARGETS"}));
-    drawGraph($("freezeCanvas"), nodes, edges);
+    drawCaseGraph($("freezeCanvas"), row.case_id, row.frozen_now || []);
     $("freezeCypher").innerHTML = cypherHTML(d);
     $("freezeResults").hidden = false;
     $("freezeResults").scrollIntoView({behavior: "smooth", block: "nearest"});
@@ -1030,9 +1075,21 @@ $("btnPDF").onclick = () => {
       </table><pre>${esc(fz.d.cypher)}</pre>`;
   }
   h += `<p class="meta" style="margin-top:30px">FraudLens · graph-powered fraud investigation · every query above is the exact Cypher the agent executed.</p>`;
-  $("printReport").innerHTML = h;
-  agentLog(`▸ exporting investigation report as PDF…`, "cmd");
-  setTimeout(() => window.print(), 150);
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FraudLens Investigation Report</title>
+<style>body{font-family:-apple-system,"Segoe UI",Inter,Roboto,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#111}
+h1{font-size:26px;border-bottom:3px solid #dc2626;padding-bottom:12px}
+h2{font-size:18px;color:#dc2626;margin-top:28px}.meta{color:#666;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}th{background:#f5f5f5}
+pre{background:#f5f5f5;padding:12px;border-radius:8px;font-size:11px;overflow-x:auto;white-space:pre-wrap}</style>
+</head><body>${h}</body></html>`;
+  const blob = new Blob([doc], {type: "text/html"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `fraudlens-report-${new Date().toISOString().slice(0,10)}.html`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  agentLog(`▸ investigation report downloaded (open in browser → Print → Save as PDF)`, "ok");
 };
 </script>
 </body>

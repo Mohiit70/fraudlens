@@ -16,13 +16,13 @@
 ## Screenshots
 
 ### Landing Page
-![Landing](docs/landing.png)
+<img src="docs/landing.png" width="700" alt="Landing Page">
 
 ### Trace the Money — 25 money trails from A-4000
-![Trace](docs/trace.png)
+<img src="docs/trace.png" width="700" alt="Trace Results">
 
 ### Hunt the Ring — 3 fraud rings detected
-![Rings](docs/rings.png)
+<img src="docs/rings.png" width="700" alt="Ring Detection">
 
 ---
 
@@ -47,7 +47,7 @@ Every tool shows its exact Cypher query. No black box.
 
 ## Architecture
 
-![Architecture](docs/architecture.png)
+<img src="docs/architecture.png" width="700" alt="Architecture">
 
 ```
 User → Web UI (D3.js) → FastAPI → FalkorDB Cloud
@@ -61,7 +61,7 @@ User → Web UI (D3.js) → FastAPI → FalkorDB Cloud
 
 ## Data Model
 
-![Data Model](docs/datamodel.png)
+<img src="docs/datamodel.png" width="700" alt="Data Model">
 
 | Node | Relationships |
 |------|---------------|

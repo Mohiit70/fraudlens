@@ -11,7 +11,18 @@
 📺 **Demo Video:** coming soon
 📝 **Blog Post:** coming soon
 
-*Analyst ko 6 ghante, FraudLens ko 90 seconds — trace, ring, kingpin, freeze.*
+---
+
+## Screenshots
+
+### Landing Page
+![Landing](docs/landing.png)
+
+### Trace the Money — 25 money trails from A-4000
+![Trace](docs/trace.png)
+
+### Hunt the Ring — 3 fraud rings detected
+![Rings](docs/rings.png)
 
 ---
 

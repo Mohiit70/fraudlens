@@ -359,10 +359,15 @@
         <div class="casefile" id="caseFile"></div>
         <canvas class="graph no-print" id="freezeCanvas"></canvas>
         <div id="freezeCypher"></div>
+        <div class="export-bar no-print">
+          <button id="btnPDF" class="btn btn-outline btn-sm">📄 EXPORT INVESTIGATION PDF</button>
         </div>
+      </div>
     </section>
   </div>
 </div>
+
+<div id="printReport"></div>
 
 <script>
 "use strict";
@@ -854,6 +859,52 @@ $("btnFreeze").onclick = async () => {
   setBusy(btn, false);
 };
 
+/* ============ PDF export ============ */
+$("btnPDF").onclick = () => {
+  const fz = window._lastFreeze, rg = window._lastRings, tr = window._lastTrace, pr = window._lastPR;
+  const row = (fz && fz.d.rows[0]) || {};
+  let h = `<h1>◉ FraudLens — Investigation Report</h1>
+    <p class="meta">Generated ${new Date().toLocaleString("en-IN")} · Synthetic demo data · WeMakeDevs × FalkorDB "Graph Hacks"</p>`;
+  if (tr) {
+    h += `<h2>1 · Money Trail — ${esc(tr.acct)} (depth ${tr.depth})</h2>
+      <p class="meta">${tr.d.rows.length} path(s) · ${tr.d.ms} ms</p><pre>${esc(tr.d.cypher)}</pre>
+      <table><tr><th>#</th><th>Path</th></tr>`;
+    tr.d.rows.slice(0, 10).forEach((r, i) => {
+      h += `<tr><td>${i + 1}</td><td>${r.path.nodes.map(n => esc(n.props.id)).join(" → ")}</td></tr>`;
+    });
+    h += `</table>`;
+  }
+  if (rg) {
+    h += `<h2>2 · Fraud Rings — ${rg.d.rows.length} detected</h2>
+      <p class="meta">${rg.d.ms} ms</p><pre>${esc(rg.d.cypher)}</pre>
+      <table><tr><th>Ring</th><th>Accounts</th><th>Device</th><th>IPs</th></tr>`;
+    rg.d.rows.forEach((r, i) => {
+      h += `<tr><td>${i + 1}</td><td>${r.account_ids.map(esc).join(", ")}</td><td>${esc(r.device_id)}</td><td>${r.ips.map(esc).join(", ")}</td></tr>`;
+    });
+    h += `</table>`;
+  }
+  if (pr) {
+    h += `<h2>3 · Hub Ranking (PageRank)</h2><p class="meta">${pr.d.ms} ms</p><pre>${esc(pr.d.cypher)}</pre>
+      <table><tr><th>#</th><th>Account</th><th>Score</th></tr>`;
+    pr.d.rows.slice(0, 10).forEach((r, i) => {
+      h += `<tr><td>${i + 1}</td><td>${esc(r.account_id)}</td><td>${Number(r.score).toFixed(4)}</td></tr>`;
+    });
+    h += `</table>`;
+  }
+  if (fz) {
+    h += `<h2>4 · Freeze Action — CASE ${esc(row.case_id || "")}</h2>
+      <table><tr><th>Field</th><th>Value</th></tr>
+      <tr><td>Accounts frozen</td><td>${(row.frozen_now || []).map(esc).join(", ")}</td></tr>
+      <tr><td>Investigator</td><td>${esc(fz.investigator)}</td></tr>
+      <tr><td>Reason</td><td>${esc(fz.reason)}</td></tr>
+      <tr><td>Graph write</td><td>(:Case)-[:TARGETS]-&gt;(:Account)</td></tr>
+      </table><pre>${esc(fz.d.cypher)}</pre>`;
+  }
+  h += `<p class="meta" style="margin-top:30px">FraudLens · graph-powered fraud investigation · every query above is the exact Cypher the agent executed.</p>`;
+  $("printReport").innerHTML = h;
+  agentLog(`▸ exporting investigation report as PDF…`, "cmd");
+  setTimeout(() => window.print(), 150);
+};
 </script>
 </body>
 </html>

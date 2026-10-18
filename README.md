@@ -1,151 +1,434 @@
-# FraudLens
+# 🔎 FraudLens
 
-![License](https://img.shields.io/badge/license-MIT-green)
-![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)
-![FalkorDB](https://img.shields.io/badge/FalkorDB-powered-blue)
-![Python](https://img.shields.io/badge/python-3.11-blue)
+### Graph-powered fraud investigation agent that traces money, hunts fraud rings, and takes action.
 
-**Graph-powered fraud investigation agent that traces, hunts, and freezes mule networks.**
+**FraudLens turns suspicious transactions into an explainable investigation in seconds.**
 
-🔗 **Live Demo:** https://fraudlens-y5ba.onrender.com/
-📺 **Demo Video:** coming soon
-📝 **Blog Post:** coming soon
+**🔗 Live Demo:** [Open FraudLens](https://fraudlens-y5ba.onrender.com/)
 
 ---
 
-## Screenshots
+## 🚨 The Problem
+
+Modern financial fraud rarely happens through a single account.
+
+A mule network can involve dozens of accounts, shared devices, shared IP addresses, and chains of small transfers designed to avoid detection.
+
+The challenge isn't simply detecting a suspicious transaction.
+
+The real questions are:
+
+Where did the money go? Who is connected? Who controls the network? And what should an investigator do next?
+
+Traditional fraud dashboards mainly generate alerts.
+
+**Investigators still have to manually connect the dots.**
+
+---
+
+# 💡 The Solution
+
+**FraudLens is a graph-powered investigation agent.**
+
+Give it a suspicious account such as:
+
+```text
+A-4000
+```
+
+FraudLens automatically:
+
+### Trace
+
+Follows money across multi-hop transaction paths.
+
+**25 money trails** can be discovered in seconds.
+
+### Hunt
+
+Finds coordinated fraud rings through shared device and IP fingerprints.
+
+**3 fraud rings** are detected in the seeded investigation dataset.
+
+### Rank
+
+Uses PageRank to identify high-centrality accounts that may represent network hubs or kingpins.
+
+**No manually assigned labels required.**
+
+### Freeze
+
+After investigator confirmation, FraudLens can freeze the suspicious account and create a persistent case record in the graph.
+
+> **It doesn't just explain the crime. It provides a path to action.**
+
+---
+
+# 🎥 See FraudLens In Action
+
+### Live Demo
+
+[Open FraudLens](https://fraudlens-y5ba.onrender.com/)
+
+Try:
+
+```text
+A-4000
+```
+
+Then click **Investigate**.
+
+---
+
+# 🖥️ Product Preview
 
 ### Landing Page
-<img src="docs/landing.png" width="700" alt="Landing Page">
 
-### Trace the Money — 25 money trails from A-4000
-<img src="docs/trace.png" width="700" alt="Trace Results">
+<p align="center">
+  <img src="docs/landing.png" width="800" alt="FraudLens Landing Page">
+</p>
 
-### Hunt the Ring — 3 fraud rings detected
-<img src="docs/rings.png" width="700" alt="Ring Detection">
+### Trace The Money
 
----
+<p align="center">
+  <img src="docs/trace.png" width="800" alt="FraudLens Money Trace">
+</p>
 
-## The Problem
+### Detect Fraud Rings
 
-Banks lose **$40B+ every year** to mule-account fraud rings. Criminals open 50 fake accounts, push ₹9,000 through each (just under the reporting limit), and vanish.
-
-A human analyst takes **4–6 hours per account** — manually tracing transfers through spreadsheets. Today's dashboards only send alerts. They watch the crime. They never stop it.
-
-## The Solution
-
-FraudLens is an **agent**, not a dashboard. Give it a suspect account, and it:
-
-1. **Traces** — follows money across multi-hop paths in the graph (25 trails in seconds)
-2. **Hunts** — finds fraud rings by shared device/IP fingerprints (3/3 rings detected)
-3. **Ranks** — runs PageRank to find the kingpin (zero labels needed)
-4. **Freezes** — locks the accounts and writes a case file **into the graph**
-
-Every tool shows its exact Cypher query. No black box.
+<p align="center">
+  <img src="docs/rings.png" width="800" alt="FraudLens Fraud Ring Detection">
+</p>
 
 ---
 
-## Architecture
+# 🧠 Why Graphs?
 
-<img src="docs/architecture.png" width="700" alt="Architecture">
+Fraud is inherently relational.
 
-```
-User → Web UI (D3.js) → FastAPI → FalkorDB Cloud
-                              ↓
-                     PDF Report (jsPDF)
+A traditional table might show:
+
+```text
+Account A → Account B
+₹9,000
 ```
 
-- **Frontend:** Vanilla JS + D3.js force-directed graphs, dark/light mode, mobile responsive
-- **Backend:** FastAPI with 3 read-only tools (regex write-guards) + 1 write endpoint (freeze)
-- **Database:** FalkorDB Cloud — native graph traversals, Cypher queries in milliseconds
+A graph reveals the larger network:
 
-## Data Model
+```text
+Person
+   ↓
+Account
+   ↓
+Account
+ ↙     ↘
+Device  IP
+   ↓     ↓
+Other Accounts
+      ↓
+  Fraud Ring
+```
 
-<img src="docs/datamodel.png" width="700" alt="Data Model">
-
-| Node | Relationships |
-|------|---------------|
-| Person | —OWNS→ Account |
-| Account | —TRANSFERRED→ Account (amount, timestamp) |
-| Account | —USES_DEVICE→ Device, —USES_IP→ IP |
-| Case | —FROZE→ Account (investigation memory) |
-
-Seeded: **75 persons, 95 accounts, 660 transfers, 3 fraud rings** (5 mules each, ₹9,000–₹9,900 structuring amounts).
-
----
-
-## The 3 Tools + 1 Action
-
-| Tool | What it does | Cypher pattern |
-|------|--------------|----------------|
-| `trace_hops` | Multi-hop money trail | `MATCH path = (a)-[:TRANSFERRED*1..3]->(b)` |
-| `find_ring` | Shared device/IP rings | `MATCH (a1)-[:USES_DEVICE]->(d)<-[:USES_DEVICE]-(a2)` |
-| `pagerank_hub` | Kingpin ranking | PageRank over `TRANSFERRED` edges |
-| `freeze` | **The agent acts** — freeze + case file | `SET a.frozen=true` + `CREATE (c:Case)-[:FROZE]->(a)` |
-
-### Safety Rails
-- 3 investigation tools are **read-only** (regex blocks `SET`/`CREATE`/`DELETE`)
-- Freeze is the **only** write path, with staged confirmation
-- Every query displayed in the UI — fully auditable
+FraudLens models these relationships directly, making **multi-hop investigation fast, visual, and explainable.**
 
 ---
 
-## Quick Start
+# 🏗️ Architecture
 
-### Try the live demo (no setup)
-Open https://fraudlens-y5ba.onrender.com/ → type `A-4000` → Investigate.
+<p align="center">
+  <img src="docs/architecture.png" width="700" alt="FraudLens Architecture">
+</p>
 
-### Run locally
+```text
+                    ┌──────────────────────┐
+                    │     Investigator     │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │      Web Interface   │
+                    │       D3.js + JS     │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │       FastAPI        │
+                    │   Investigation API  │
+                    └──────────┬───────────┘
+                               │
+                  ┌────────────┴────────────┐
+                  ▼                         ▼
+        ┌─────────────────┐       ┌─────────────────┐
+        │    FalkorDB     │       │   PDF Reports   │
+        │  Graph Database │       │      jsPDF      │
+        └─────────────────┘       └─────────────────┘
+```
 
-**Prerequisites:** Python 3.11+, a FalkorDB instance ([FalkorDB Cloud](https://falkordb.cloud) free tier works).
+---
+
+# 🕸️ Data Model
+
+<p align="center">
+  <img src="docs/datamodel.png" width="700" alt="FraudLens Data Model">
+</p>
+
+FraudLens represents financial activity as a connected graph.
+
+| Node | Relationship |
+|---|---|
+| Person | `OWNS → Account` |
+| Account | `TRANSFERRED → Account` |
+| Account | `USES_DEVICE → Device` |
+| Account | `USES_IP → IP` |
+| Case | `FROZE → Account` |
+
+### Seeded Investigation Dataset
+
+- **75** persons
+- **95** accounts
+- **660** transfers
+- **3** fraud rings
+- **15** mule accounts
+- Structuring transactions between **₹9,000–₹9,900**
+
+---
+
+# 🧰 Investigation Tools
+
+| Tool | Purpose | Graph Operation |
+|---|---|---|
+| `trace_hops` | Trace multi-hop money movement | `TRANSFERRED*1..3` |
+| `find_ring` | Detect shared device/IP networks | `USES_DEVICE / USES_IP` |
+| `pagerank_hub` | Identify network hubs | PageRank |
+| `freeze` | Take investigation action | Creates freeze + case record |
+
+Every investigation operation is backed by an actual graph query.
+
+---
+
+# ⚡ The Investigation Loop
+
+```text
+        SUSPICIOUS ACCOUNT
+                 │
+                 ▼
+               TRACE
+                 │
+                 ▼
+        FIND CONNECTIONS
+                 │
+                 ▼
+          DETECT FRAUD RING
+                 │
+                 ▼
+            RANK HUBS
+                 │
+                 ▼
+         INVESTIGATOR REVIEW
+                 │
+                 ▼
+              FREEZE
+                 │
+                 ▼
+          CREATE CASE
+```
+
+FraudLens transforms a raw fraud alert into an **actionable investigation workflow.**
+
+---
+
+# 🔐 Safety & Auditability
+
+Financial investigation systems need controlled actions.
+
+FraudLens separates **analysis** from **action**.
+
+### Read-only investigation tools
+
+The tracing, ring detection, and ranking operations are read-only.
+
+They cannot modify the graph.
+
+### Controlled action
+
+`freeze` is the dedicated write operation.
+
+When confirmed, it:
+
+1. Marks the account as frozen.
+2. Creates a `Case` node.
+3. Links the case to the affected account.
+4. Preserves the investigation in the graph.
+
+### Explainable Queries
+
+The Cypher query behind each investigation operation can be displayed to the investigator.
+
+**No hidden database mutations.**
+
+---
+
+# 🏆 What Makes FraudLens Different?
+
+Most fraud systems stop at:
+
+> **"This transaction looks suspicious."**
+
+FraudLens goes further:
+
+> **"Here is how the money moved, here are the connected accounts, here is the suspicious network hub, and here is the action an investigator can take."**
+
+### From Alert → Investigation → Action
+
+```text
+ALERT
+  ↓
+TRACE
+  ↓
+UNDERSTAND
+  ↓
+FIND THE RING
+  ↓
+RANK HUBS
+  ↓
+REVIEW
+  ↓
+FREEZE
+```
+
+---
+
+# 🛠️ Tech Stack
+
+### Frontend
+
+- Vanilla JavaScript
+- D3.js
+- Responsive UI
+- Interactive force-directed graphs
+
+### Backend
+
+- Python
+- FastAPI
+
+### Graph
+
+- FalkorDB
+- Cypher
+- PageRank
+
+### Reporting
+
+- jsPDF
+
+### Deployment
+
+- Render
+
+---
+
+# 🚀 Quick Start
+
+## Requirements
+
+- Python 3.11+
+- FalkorDB instance
+
+FalkorDB Cloud can be used for development.
+
+### 1. Clone
 
 ```bash
-# 1. Clone
 git clone https://github.com/Mohiit70/fraudlens.git
 cd fraudlens
+```
 
-# 2. Install
+### 2. Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-# 3. Configure FalkorDB connection
+### 3. Configure FalkorDB
+
+```bash
 export FALKOR_HOST="your-instance.falkordb.cloud"
 export FALKOR_PORT="6379"
 export FALKOR_USER="falkordb"
 export FALKOR_PASSWORD="your-password"
+```
 
-# 4. Seed the database (idempotent — safe to re-run)
+### 4. Seed the Graph
+
+```bash
 python seed.py --verify
+```
 
-# 5. Run the app
+The seed operation is idempotent and safe to run again.
+
+### 5. Start FraudLens
+
+```bash
 python -m uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-Open http://localhost:8000 → type `A-4000` → Investigate.
+Open:
 
-### Deploy to Render
-Click **New Web Service** → connect this repo:
-- **Build:** `pip install -r requirements.txt`
-- **Start:** `uvicorn app:app --host 0.0.0.0 --port $PORT`
-- **Env vars:** `FALKOR_HOST`, `FALKOR_PORT`, `FALKOR_USER`, `FALKOR_PASSWORD`
+```text
+http://localhost:8000
+```
 
----
+Enter:
 
-## Track Mapping
+```text
+A-4000
+```
 
-**Track 01 (Primary): Agents That Act on Connected Data** — the freeze action writes to the graph; the agent doesn't just analyze, it acts.
-
-**Track 02 (Secondary): Agent Memory and Coordination** — `Case` nodes persist investigations in the graph, building cross-session memory.
+and click **Investigate**.
 
 ---
 
-## Tech Stack
+# ☁️ Deploy To Render
 
-Python · FastAPI · FalkorDB (Cypher) · D3.js · jsPDF · Render
+### Build Command
 
-## AI Disclosure
+```bash
+pip install -r requirements.txt
+```
 
-Built with AI assistance for code, UI design, and documentation. The architecture, Cypher queries, and fraud-detection logic are the author's own design. I can explain every query in this repo.
+### Start Command
 
-## License
+```bash
+uvicorn app:app --host 0.0.0.0 --port $PORT
+```
 
-MIT © 2026 Mohit Bisht
+### Environment Variables
+
+```text
+FALKOR_HOST
+FALKOR_PORT
+FALKOR_USER
+FALKOR_PASSWORD
+```
+
+---
+
+# 🔮 Future Potential
+
+FraudLens can evolve into a broader financial-crime investigation platform with:
+
+- Real-time transaction ingestion
+- Streaming fraud detection
+- Continuous network monitoring
+- Investigator collaboration
+- Advanced risk scoring
+- Additional graph algorithms
+- Historical case analytics
+- Automated regulatory reporting
+- Larger financial-network datasets
+
+---
+
+
+---

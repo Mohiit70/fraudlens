@@ -273,6 +273,50 @@
     #printReport .meta{color:#666;font-size:12px}
   }
   @media(max-width:900px){.stat-chips{margin-left:0}.hero{padding:60px 0 50px}}
+
+/* ============ MOBILE RESPONSIVE ============ */
+@media(max-width:768px){
+  .wrap{padding:0 16px}
+  /* nav */
+  .nav-inner{flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .stat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-left:0}
+  .chip{font-size:11px;padding:5px 10px}
+  /* hero */
+  .hero{padding:50px 0 40px}
+  .hero h1{font-size:34px!important;line-height:1.2}
+  .hero .sub{font-size:15px}
+  .hero-stats{flex-wrap:wrap;gap:16px}
+  .hero-demo-body{grid-template-columns:1fr!important}
+  .demo-visual{min-height:200px}
+  /* problem cards */
+  .prob-grid{grid-template-columns:1fr!important}
+  /* steps */
+  .steps-grid{grid-template-columns:1fr!important}
+  /* features */
+  .feat-grid{grid-template-columns:1fr!important}
+  /* app sections */
+  .tool-grid{grid-template-columns:1fr!important}
+  .ring-cards{grid-template-columns:1fr!important}
+  .alert-grid{grid-template-columns:1fr!important}
+  /* tables scroll */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:500px}
+  /* canvas graphs */
+  canvas{max-width:100%;height:auto}
+  .graph-box{overflow-x:auto}
+  /* case file */
+  .case-grid{grid-template-columns:1fr 1fr!important}
+  /* buttons */
+  .btn{padding:10px 16px;font-size:14px}
+  /* footer */
+  .site .wrap{flex-direction:column;gap:8px;text-align:center}
+}
+@media(max-width:480px){
+  .hero h1{font-size:28px!important}
+  .case-grid{grid-template-columns:1fr!important}
+  .chip{font-size:10px}
+}
+
 </style>
 </head>
 <body>

@@ -5,6 +5,7 @@
 **FraudLens turns suspicious transactions into an explainable investigation in seconds.**
 
 **🔗 Live Demo:** [Open FraudLens](https://fraudlens-y5ba.onrender.com/)
+**📝 Blog Post:** [Read on Medium](https://medium.com/@mail.mohitbisht/the-fraud-wasnt-in-the-transaction-it-was-in-the-graph-df1e6c5bfc84)
 
 ---
 

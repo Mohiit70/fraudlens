@@ -137,7 +137,7 @@
   footer.site .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
 
   /* ============ APP ============ */
-  #app{display:block;min-height:100vh}
+  #app{display:none;min-height:100vh}
   .app-nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 90%,transparent);
        backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
   .app-nav-inner{display:flex;align-items:center;gap:14px;padding:12px 24px;max-width:1280px;margin:0 auto;flex-wrap:wrap}
@@ -272,10 +272,135 @@
 </head>
 <body>
 
+<!-- ==================== LANDING ==================== -->
+<div id="landing">
+  <nav class="nav"><div class="nav-inner">
+    <div class="logo"><div class="logo-mark">◉</div>FRAUD<span>LENS</span></div>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+      <button class="btn btn-primary btn-sm" onclick="showApp()">Launch App →</button>
+    </div>
+  </div></nav>
+
+  <header class="hero"><div class="wrap">
+    <div class="hero-badge">🕸️ WeMakeDevs × FalkorDB — Graph Hacks Hackathon</div>
+    <h1>See fraud the way<br>criminals <span class="hl">hide</span> it —<br>as a network.</h1>
+    <p class="sub">FraudLens is a graph-powered investigation agent. It traces stolen money across accounts, hunts mule rings by their shared fingerprints, ranks laundering kingpins — then <b>freezes</b> them. Every decision shows its exact database query.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary" onclick="showApp()">🔍 Start Investigating</button>
+      <a class="btn btn-outline" href="#how">How it works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><b class="red">6 hrs → 90s</b><span>per investigation</span></div>
+      <div class="hstat"><b>3/3</b><span>fraud rings detected</span></div>
+      <div class="hstat"><b class="blue">0</b><span>false positives</span></div>
+      <div class="hstat"><b>100%</b><span>queries visible</span></div>
+    </div>
+
+    <!-- live mini demo inside hero -->
+    <div class="hero-demo">
+      <div class="hero-demo-bar"><span class="tl">●</span><span class="tl2">●</span><span class="tl3">●</span>&nbsp; LIVE PREVIEW — what the agent sees</div>
+      <div class="hero-demo-body">
+        <div class="mini-graph" id="miniGraph"></div>
+        <div class="mini-log">
+          <div><span class="cmd">▸ trace_hops("A-4000", depth=3)</span></div>
+          <div><span class="ok">✓ 25 money-trail paths · 1230 ms</span></div>
+          <div><span class="cmd">▸ find_ring()</span></div>
+          <div><span class="ok">✓ 3 fraud rings detected · 247 ms</span></div>
+          <div><span class="cmd">▸ pagerank_hub()</span></div>
+          <div><span class="ok">✓ top hub: A-4023 · kingpin found</span></div>
+          <div><span class="act">▸ FREEZE EXECUTING — 5 accounts…</span></div>
+          <div><span class="ok">✓ CASE written to graph · FROZEN 5</span></div>
+        </div>
+      </div>
+    </div>
+  </div></header>
+
+  <section class="section" id="problem"><div class="wrap">
+    <h2>The problem it solves</h2>
+    <p class="lead">Fraud isn't a row in a spreadsheet. It's a network — and investigators are still fighting it with tables.</p>
+    <div class="prob-grid">
+      <div class="prob-card alert">
+        <div class="icon">💸</div>
+        <h3>Billions lost to mule networks</h3>
+        <p>Organized rings move dirty money through chains of "mule" accounts, keeping each transfer just under reporting thresholds. The pattern is invisible in tabular reports.</p>
+      </div>
+      <div class="prob-card">
+        <div class="icon">🐌</div>
+        <h3>6 hours per account</h3>
+        <p>A human analyst tracing one suspect through spreadsheets takes half a workday. By the time the trail is mapped, the money has already left the system.</p>
+      </div>
+      <div class="prob-card">
+        <div class="icon">📊</div>
+        <h3>Dashboards only watch</h3>
+        <p>Existing tools raise alerts and build charts — but nobody acts. The investigator still has to manually freeze accounts across disconnected systems.</p>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="section" id="how" style="background:var(--panel2)"><div class="wrap">
+    <h2>How it works</h2>
+    <p class="lead">Four steps. One graph. Zero black boxes — every action displays the exact query the agent ran.</p>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>🔍 Trace the money</h3>
+        <p>Enter a suspect account. The agent follows transfers N hops deep — a traversal SQL can't express without painful recursive queries.</p>
+        <code>MATCH p=(a)-[:TRANSFERRED*1..4]→(b)</code>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>🕸️ Hunt the ring</h3>
+        <p>Mule networks reuse devices. The agent finds 4+ accounts on one device sharing IPs — the classic fraud-ring fingerprint.</p>
+        <code>MATCH (d:Device)←[:USES_DEVICE]-(a)</code>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>🎯 Find the hub</h3>
+        <p>PageRank over money-flow edges surfaces the laundering kingpin — the account everything flows through. No labels needed.</p>
+        <code>CALL algo.pageRank() YIELD node</code>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>⚡ Execute freeze</h3>
+        <p>The agent doesn't just report — it acts. Accounts freeze, and a case file is written back into the graph as institutional memory.</p>
+        <code>SET a.frozen=true CREATE (:Case)</code>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="section" id="features"><div class="wrap">
+    <h2>Why it's different</h2>
+    <p class="lead">Built for investigators, not dashboard-watchers.</p>
+    <div class="feat-grid">
+      <div class="feat"><h3>⚡ Acts, not just alerts</h3><p>Two-step freeze writes <b>frozen=true</b> and a <b>(:Case)</b> node straight into the graph. The only mutation the API allows.</p></div>
+      <div class="feat"><h3>🔎 Every query visible</h3><p>Each tool panel shows the exact Cypher with a copy button. No black box — see precisely what the agent decided.</p></div>
+      <div class="feat"><h3>🧠 Graph-native memory</h3><p>Case files persist as nodes. The next investigation starts from what the last one learned.</p></div>
+      <div class="feat"><h3>📄 One-click PDF report</h3><p>Export the full investigation — traces, rings, case file, queries — as a printable PDF for compliance.</p></div>
+      <div class="feat"><h3>🌓 Light &amp; dark</h3><p>Professional light theme for the office, dark ops-mode for the night shift. One toggle.</p></div>
+      <div class="feat"><h3>🚀 Zero friction</h3><p>No signup. Open the URL, type <b>A-4000</b>, hit Investigate. Judges are investigating in 10 seconds.</p></div>
+    </div>
+  </div></section>
+
+  <div class="wrap"><div class="cta-band">
+    <h2>Catch a fraud ring in 90 seconds.</h2>
+    <p>Trace → Hunt → Rank → Freeze. Watch the case file hit the graph.</p>
+    <button class="btn btn-primary" onclick="showApp()">Launch FraudLens →</button>
+  </div></div>
+
+  <footer class="site"><div class="wrap">
+    <div><b style="color:var(--txt)">FRAUDLENS</b> — WeMakeDevs × FalkorDB "Graph Hacks", Track 01 + 02.<br>Synthetic data: 75 persons · 95 accounts · ~660 transfers · 3 planted rings.</div>
+    <div>Built with AI assistance (disclosed). MIT licensed.</div>
+  </div></footer>
+</div>
+
 <!-- ==================== APP ==================== -->
 <div id="app">
   <nav class="app-nav"><div class="app-nav-inner">
-    <div class="logo" style="cursor:pointer" onclick="void(0)"><div class="logo-mark">◉</div>FRAUD<span>LENS</span></div>
+    <div class="logo" style="cursor:pointer" onclick="showLanding()"><div class="logo-mark">◉</div>FRAUD<span>LENS</span></div>
     <div class="stat-chips">
       <div class="chip">Persons<b id="stPersons">…</b></div>
       <div class="chip">Accounts<b id="stAccounts">…</b></div>
@@ -285,7 +410,7 @@
     </div>
     <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">CONNECTING…</span></div>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
-    <button class="btn btn-ghost btn-sm" onclick="void(0)">← Home</button>
+    <button class="btn btn-ghost btn-sm" onclick="showLanding()">← Home</button>
   </div></nav>
   <div class="demo-strip">⚡ <b>60-second demo:</b> ① type <b>A-4000</b> → Investigate &nbsp;② Scan for rings &nbsp;③ stage a ring &nbsp;④ <b>EXECUTE FREEZE</b> — then export the PDF.</div>
 
@@ -394,7 +519,11 @@ function showApp(){
   setTimeout(()=>{ ["traceCanvas","ringCanvas","freezeCanvas"].forEach(id=>{
     const c = document.getElementById(id); if(c && c.clientWidth) drawGraph(c,[],[]); }); }, 60);
 }
-
+function showLanding(){
+  document.getElementById("app").style.display = "none";
+  document.getElementById("landing").style.display = "block";
+  window.scrollTo(0,0);
+}
 
 /* ============ hero mini graph ============ */
 function drawMiniGraph(){

@@ -670,6 +670,8 @@ function drawRing(canvas, deviceLabel, accountIds, ips) {
 /* Dedicated radial renderer for the freeze case graph:
    case node in center, frozen accounts on a clean circle. */
 function drawCaseGraph(canvas, caseId, accountIds) {
+  caseId = caseId || "CASE";
+  accountIds = accountIds || [];
   const P = pal();
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth || 800, H = 340;
@@ -1006,7 +1008,7 @@ $("btnFreeze").onclick = async () => {
   try {
     const d = await post("/api/actions/freeze", {accounts, reason, investigator});
     window._lastFreeze = {accounts, reason, investigator, d};
-    const row = d.rows[0] || {};
+    const row = (d.rows && d.rows[0]) || {};
     agentLog(`✓ <b>CASE ${esc(row.case_id)}</b> written — ${row.frozen_count} account(s) frozen · ${d.ms} ms`, "ok");
     $("caseFile").innerHTML = `
       <div class="stamp">FROZEN</div>

@@ -1,0 +1,20 @@
+# FraudLens — one-click Render deploy (Blueprint).
+# Render will prompt for FALKOR_HOST and FALKOR_PASSWORD at deploy time.
+# Pair with a FalkorDB Cloud free-tier database (see DEPLOY.md).
+services:
+  - type: web
+    name: fraudlens
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: FALKOR_HOST
+        sync: false # <-- paste your FalkorDB Cloud host (no port, no scheme)
+      - key: FALKOR_PORT
+        value: 6379
+      - key: FALKOR_USER
+        value: default
+      - key: FALKOR_PASSWORD
+        sync: false # <-- paste your FalkorDB Cloud password (never committed)
+      - key: FALKOR_GRAPH
+        value: fraudlens

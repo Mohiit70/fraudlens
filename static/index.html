@@ -1,269 +1,427 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FraudLens — Autonomous Fraud Investigation Unit</title>
+<title>FraudLens — Graph-Powered Fraud Investigation</title>
+<meta name="description" content="FraudLens traces stolen money, hunts mule rings, and freezes fraud accounts — a graph-powered investigation agent.">
 <style>
-  :root{
-    --bg:#06080c; --panel:#0c1016; --panel2:#10151d; --line:#1f2733;
-    --txt:#e8eef5; --dim:#8b98a9; --faint:#5a6678;
-    --red:#ff3b47; --red-dim:#7a1f26; --green:#3ddc84; --amber:#f0a832;
-    --blue:#5aa9ff; --purple:#b07fff; --teal:#3fd4c1;
-    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  /* ============ THEME TOKENS ============ */
+  :root, [data-theme="light"]{
+    --bg:#f4f6fa; --bg2:#eef1f6;
+    --panel:#ffffff; --panel2:#f8fafc;
+    --line:#e2e8f0; --line2:#cbd5e1;
+    --txt:#0f172a; --dim:#475569; --faint:#94a3b8;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --green:#16a34a; --green-bg:#f0fdf4;
+    --amber:#d97706; --amber-bg:#fffbeb;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --purple:#7c3aed; --purple-bg:#f5f3ff;
+    --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 12px rgba(15,23,42,.06);
+    --shadow-lg:0 8px 30px rgba(15,23,42,.12);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  [data-theme="dark"]{
+    --bg:#0b0f16; --bg2:#0e131c;
+    --panel:#131926; --panel2:#1a2233;
+    --line:#243044; --line2:#334155;
+    --txt:#e8eef5; --dim:#94a3b8; --faint:#5a6678;
+    --red:#ff3b47; --red-bg:rgba(255,59,71,.08); --red-line:rgba(255,59,71,.35);
+    --green:#3ddc84; --green-bg:rgba(61,220,132,.08);
+    --amber:#f0a832; --amber-bg:rgba(240,168,50,.08);
+    --blue:#5aa9ff; --blue-bg:rgba(90,169,255,.08);
+    --purple:#b07fff; --purple-bg:rgba(176,127,255,.08);
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.3);
+    --shadow-lg:0 8px 30px rgba(0,0,0,.5);
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{background:var(--bg);color:var(--txt);font-family:var(--mono);margin:0;
-       background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,59,71,.06),transparent);}
-  ::selection{background:rgba(255,59,71,.35)}
+  body{margin:0;font-family:var(--font);background:var(--bg);color:var(--txt);transition:background .25s,color .25s}
+  ::selection{background:rgba(220,38,38,.2)}
 
-  /* ---------- header ---------- */
-  header{position:sticky;top:0;z-index:50;background:rgba(6,8,12,.92);
-         backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
-  .hbar{max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;
-        align-items:center;gap:18px;flex-wrap:wrap}
-  .logo{display:flex;align-items:center;gap:12px}
-  .eye{width:38px;height:38px;border-radius:50%;border:2px solid var(--red);
-       display:grid;place-items:center;box-shadow:0 0 18px rgba(255,59,71,.5);
-       animation:pulse 2.6s ease-in-out infinite}
-  .eye::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--red)}
-  @keyframes pulse{0%,100%{box-shadow:0 0 10px rgba(255,59,71,.35)}50%{box-shadow:0 0 26px rgba(255,59,71,.75)}}
-  .logo h1{margin:0;font-size:20px;letter-spacing:4px}
-  .logo h1 span{color:var(--red)}
-  .tag{font-size:10.5px;color:var(--dim);letter-spacing:2px;margin-top:2px}
-  .stats{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
-  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
-        padding:7px 12px;font-size:11px;letter-spacing:1px;color:var(--dim);text-align:center}
-  .chip b{display:block;font-size:17px;color:var(--txt);letter-spacing:0;margin-top:2px}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  button{font-family:var(--font);cursor:pointer}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;
+       padding:12px 24px;border-radius:10px;border:1px solid transparent;transition:.18s;text-decoration:none}
+  .btn-primary{background:var(--red);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.35)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(220,38,38,.45)}
+  .btn-outline{background:var(--panel);color:var(--txt);border-color:var(--line2)}
+  .btn-outline:hover{border-color:var(--red);color:var(--red)}
+  .btn-ghost{background:transparent;color:var(--dim);border-color:var(--line)}
+  .btn-ghost:hover{color:var(--red);border-color:var(--red)}
+  .btn:disabled{opacity:.5;cursor:wait;transform:none!important}
+  .btn-sm{padding:8px 16px;font-size:12.5px;border-radius:8px}
+  .theme-toggle{background:var(--panel);border:1px solid var(--line2);border-radius:50%;
+       width:40px;height:40px;display:grid;place-items:center;font-size:18px;transition:.2s}
+  .theme-toggle:hover{border-color:var(--red);transform:rotate(15deg)}
+
+  /* ============ LANDING ============ */
+  #landing{min-height:100vh}
+  .nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);
+       backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;gap:16px;padding:14px 24px;max-width:1200px;margin:0 auto}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:1px}
+  .logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--red),#991b1b);
+       display:grid;place-items:center;color:#fff;font-size:18px;box-shadow:0 4px 12px rgba(220,38,38,.4)}
+  .logo span{color:var(--red)}
+  .nav-links{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .nav-links a{color:var(--dim);text-decoration:none;font-size:13.5px;font-weight:500;padding:8px 12px;border-radius:8px}
+  .nav-links a:hover{color:var(--txt);background:var(--panel2)}
+
+  .hero{padding:90px 0 70px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;
+       background:radial-gradient(ellipse 60% 45% at 50% 0%,rgba(220,38,38,.09),transparent);pointer-events:none}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--panel);
+       border:1px solid var(--red-line);color:var(--red);font-size:12.5px;font-weight:600;
+       padding:7px 16px;border-radius:100px;margin-bottom:26px;box-shadow:var(--shadow)}
+  .hero h1{font-size:clamp(38px,6vw,64px);font-weight:800;letter-spacing:-1.5px;line-height:1.08;margin:0 0 20px}
+  .hero h1 .hl{color:var(--red)}
+  .hero p.sub{font-size:18px;color:var(--dim);max-width:640px;margin:0 auto 36px;line-height:1.65}
+  .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .hero-stats{display:flex;gap:36px;justify-content:center;margin-top:56px;flex-wrap:wrap}
+  .hstat{text-align:center}
+  .hstat b{display:block;font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .hstat b.red{color:var(--red)} .hstat b.blue{color:var(--blue)}
+  .hstat span{font-size:12.5px;color:var(--faint);font-weight:500}
+
+  .hero-demo{margin:56px auto 0;max-width:900px;background:var(--panel);border:1px solid var(--line);
+       border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden;text-align:left}
+  .hero-demo-bar{display:flex;align-items:center;gap:8px;padding:12px 18px;background:var(--panel2);
+       border-bottom:1px solid var(--line);font-size:12px;color:var(--faint);font-weight:600}
+  .hero-demo-body{padding:28px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:700px){.hero-demo-body{grid-template-columns:1fr}}
+  .mini-graph{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+       min-height:220px;display:grid;place-items:center;position:relative;overflow:hidden}
+  .mini-node{position:absolute;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+       font-size:10px;font-weight:700;font-family:var(--mono)}
+  .mini-log{font-family:var(--mono);font-size:12px;line-height:2;color:var(--dim)}
+  .mini-log .ok{color:var(--green)} .mini-log .act{color:var(--red);font-weight:700} .mini-log .cmd{color:var(--blue)}
+
+  .section{padding:70px 0}
+  .section h2{font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.8px;text-align:center;margin:0 0 14px}
+  .section p.lead{text-align:center;color:var(--dim);max-width:620px;margin:0 auto 48px;font-size:16px;line-height:1.65}
+
+  .prob-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+  .prob-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+       padding:28px;box-shadow:var(--shadow)}
+  .prob-card .icon{font-size:30px;margin-bottom:14px}
+  .prob-card h3{margin:0 0 10px;font-size:17px}
+  .prob-card p{margin:0;color:var(--dim);font-size:14px;line-height:1.65}
+  .prob-card.alert{border-color:var(--red-line);background:var(--red-bg)}
+
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .step-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+       padding:28px 24px;box-shadow:var(--shadow);transition:.2s}
+  .step-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--red-line)}
+  .step-num{width:40px;height:40px;border-radius:12px;background:var(--red);color:#fff;
+       display:grid;place-items:center;font-weight:800;font-size:17px;margin-bottom:16px}
+  .step-card h3{margin:0 0 8px;font-size:16px}
+  .step-card p{margin:0;color:var(--dim);font-size:13.5px;line-height:1.6}
+  .step-card code{display:block;margin-top:12px;background:var(--panel2);border:1px solid var(--line);
+       border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--amber);
+       overflow-x:auto;white-space:nowrap}
+
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+  .feat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:var(--shadow)}
+  .feat h3{margin:0 0 8px;font-size:15px}
+  .feat p{margin:0;color:var(--dim);font-size:13.5px;line-height:1.6}
+
+  .cta-band{background:linear-gradient(135deg,#7f1d1d,#dc2626);border-radius:24px;
+       padding:60px 40px;text-align:center;color:#fff;margin:20px 0 70px;box-shadow:var(--shadow-lg)}
+  .cta-band h2{color:#fff;margin:0 0 12px;font-size:32px}
+  .cta-band p{color:rgba(255,255,255,.85);margin:0 0 30px;font-size:16px}
+  .cta-band .btn-primary{background:#fff;color:var(--red);box-shadow:none;font-size:16px;padding:16px 36px}
+
+  footer.site{border-top:1px solid var(--line);padding:36px 0;color:var(--faint);font-size:13px}
+  footer.site .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+
+  /* ============ APP ============ */
+  #app{display:block;min-height:100vh}
+  .app-nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 90%,transparent);
+       backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .app-nav-inner{display:flex;align-items:center;gap:14px;padding:12px 24px;max-width:1280px;margin:0 auto;flex-wrap:wrap}
+  .stat-chips{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+       padding:6px 14px;font-size:10.5px;font-weight:600;letter-spacing:.8px;color:var(--faint);
+       text-transform:uppercase;box-shadow:var(--shadow)}
+  .chip b{display:block;font-size:18px;color:var(--txt);letter-spacing:0;margin-top:1px}
   .chip.hot b{color:var(--red)} .chip.cool b{color:var(--green)}
-  .conn{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1px;color:var(--dim)}
+  .conn{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--dim)}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--faint)}
   .dot.on{background:var(--green);box-shadow:0 0 10px var(--green)}
   .dot.off{background:var(--red);box-shadow:0 0 10px var(--red)}
+  .demo-strip{background:var(--amber-bg);border-bottom:1px solid var(--line);font-size:12.5px;
+       color:var(--dim);padding:9px 24px;text-align:center}
+  .demo-strip b{color:var(--amber)}
+  .app-main{max-width:1280px;margin:0 auto;padding:28px 24px 60px}
 
-  .demo-hint{max-width:1280px;margin:0 auto;padding:10px 22px;font-size:12px;color:var(--dim);
-             border-bottom:1px dashed var(--line)}
-  .demo-hint b{color:var(--amber)}
+  .alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+  .alert-card{background:var(--panel);border:1px solid var(--red-line);border-left:4px solid var(--red);
+       border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .alert-card .a-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .alert-card .a-badge{background:var(--red);color:#fff;font-size:10.5px;font-weight:700;
+       padding:4px 10px;border-radius:100px;letter-spacing:.8px}
+  .alert-card h3{margin:0;font-size:15px}
+  .alert-card .a-meta{font-size:12.5px;color:var(--dim);line-height:1.7}
+  .alert-card .a-meta b{color:var(--txt)}
 
-  main{max-width:1280px;margin:0 auto;padding:26px 22px 60px}
-
-  /* ---------- agent terminal ---------- */
-  .term{background:#04060a;border:1px solid var(--line);border-radius:12px;
-        margin-bottom:26px;overflow:hidden}
-  .term-head{padding:9px 16px;font-size:11px;letter-spacing:2px;color:var(--dim);
-             border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .term{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+       margin-bottom:24px;overflow:hidden;box-shadow:var(--shadow)}
+  .term-head{padding:10px 18px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--dim);
+       border-bottom:1px solid var(--line);background:var(--panel2);display:flex;gap:8px;align-items:center}
   .tl{color:var(--red)}.tl2{color:var(--amber)}.tl3{color:var(--green)}
-  #agentLog{height:150px;overflow-y:auto;padding:12px 16px;font-size:12.5px;line-height:1.75}
+  #agentLog{height:140px;overflow-y:auto;padding:12px 18px;font-size:12.5px;line-height:1.8;font-family:var(--mono)}
   #agentLog .cmd{color:var(--blue)} #agentLog .ok{color:var(--green)}
   #agentLog .warn{color:var(--amber)} #agentLog .act{color:var(--red);font-weight:700}
   #agentLog .dim{color:var(--faint)}
 
-  /* ---------- steps ---------- */
-  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-        padding:22px;margin-bottom:22px;position:relative;overflow:hidden}
-  .step::before{content:attr(data-n);position:absolute;top:6px;right:18px;
-        font-size:64px;font-weight:700;color:rgba(255,255,255,.035);letter-spacing:-2px}
-  .step h2{margin:0 0 4px;font-size:15px;letter-spacing:2.5px}
-  .step h2 .k{color:var(--red)}
-  .step .desc{color:var(--dim);font-size:12.5px;margin-bottom:16px;max-width:760px;line-height:1.6}
-  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
-  input[type=text]{background:#04060a;border:1px solid var(--line);color:var(--txt);
-        font-family:var(--mono);font-size:13.5px;padding:10px 14px;border-radius:9px;min-width:200px}
-  input[type=text]:focus{outline:none;border-color:var(--red)}
-  input[type=range]{accent-color:var(--red);width:170px}
-  .depth-val{font-size:12px;color:var(--amber);min-width:64px}
-  button{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:1px;
-         padding:11px 20px;border-radius:9px;border:1px solid var(--line);
-         background:var(--panel2);color:var(--txt);cursor:pointer;transition:.15s}
-  button:hover:not(:disabled){border-color:var(--red);transform:translateY(-1px)}
-  button:disabled{opacity:.45;cursor:wait}
-  button.primary{background:linear-gradient(180deg,#d92b36,#a31620);border-color:#ff6b74;color:#fff}
-  button.ghost{background:transparent}
-  button.mini{font-size:10.5px;padding:5px 10px;letter-spacing:1px}
-  button.armed{background:#fff;color:#a31620;border-color:#fff;animation:blink .7s steps(2) infinite}
-  @keyframes blink{50%{opacity:.55}}
+  .tool{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+       padding:26px;margin-bottom:20px;box-shadow:var(--shadow);position:relative}
+  .tool-num{position:absolute;top:14px;right:20px;font-size:52px;font-weight:800;
+       color:var(--line);letter-spacing:-2px;user-select:none}
+  .tool h2{margin:0 0 6px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+  .tool h2 .k{color:var(--red)}
+  .tool .desc{color:var(--dim);font-size:13.5px;margin-bottom:18px;max-width:760px;line-height:1.65}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input[type=text]{background:var(--panel2);border:1px solid var(--line2);color:var(--txt);
+       font-size:13.5px;padding:10px 14px;border-radius:9px;min-width:200px;font-family:var(--font)}
+  input[type=text]:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+  input[type=range]{accent-color:var(--red);width:160px}
+  .depth-val{font-size:12px;color:var(--amber);font-weight:600;min-width:60px}
+  .results{margin-top:16px}
+  canvas.graph{width:100%;height:340px;background:var(--panel2);border:1px solid var(--line);
+       border-radius:12px;margin-bottom:14px}
 
-  .results{margin-top:14px}
-  canvas.graph{width:100%;height:340px;background:#04060a;border:1px solid var(--line);
-        border-radius:10px;margin-bottom:12px}
-
-  .cypher{margin:12px 0}
+  .cypher{margin:14px 0}
   .cypher-head{display:flex;justify-content:space-between;align-items:center;
-        font-size:10.5px;letter-spacing:2px;color:var(--amber);margin-bottom:6px}
-  .cypher pre{background:#04060a;border:1px solid var(--line);border-left:3px solid var(--amber);
-        border-radius:0 8px 8px 0;padding:12px 14px;margin:0;overflow-x:auto;
-        font-size:12px;line-height:1.65;color:#ffd479;white-space:pre-wrap}
+       font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:var(--amber);margin-bottom:6px}
+  .cypher pre{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--amber);
+       border-radius:0 10px 10px 0;padding:12px 14px;margin:0;overflow-x:auto;
+       font-size:12px;line-height:1.65;color:var(--amber);white-space:pre-wrap;font-family:var(--mono)}
   .cypher-meta{font-size:11px;color:var(--faint);margin-top:6px}
 
   .hop{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:7px 0;font-size:12.5px}
-  .hop-n{color:var(--faint);min-width:34px}
-  .pill{background:rgba(90,169,255,.14);border:1px solid rgba(90,169,255,.5);color:#bcdcff;
-        padding:4px 11px;border-radius:20px;font-weight:700;font-size:12px}
-  .pill.frozen{background:rgba(176,127,255,.16);border-color:var(--purple);color:#d9c6ff}
-  .pill.risk{background:rgba(255,59,71,.14);border-color:var(--red);color:#ffb3b8}
-  .hop-edge{color:var(--green);font-size:11.5px;white-space:nowrap}
+  .hop-n{color:var(--faint);min-width:34px;font-family:var(--mono)}
+  .pill{background:var(--blue-bg);border:1px solid var(--blue);color:var(--blue);
+       padding:4px 12px;border-radius:100px;font-weight:600;font-size:12px}
+  .pill.frozen{background:var(--purple-bg);border-color:var(--purple);color:var(--purple)}
+  .pill.risk{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+  .hop-edge{color:var(--green);font-size:11.5px;white-space:nowrap;font-family:var(--mono);font-weight:600}
 
-  .ring{border:1px dashed rgba(255,59,71,.55);border-radius:10px;padding:14px;margin:10px 0;
-        background:rgba(255,59,71,.04)}
-  .ring-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-  .ring-title{font-size:13.5px;font-weight:700;color:#ffb3b8}
-  .kv{font-size:12px;color:var(--dim)} .kv b{color:var(--txt)}
-  .stage-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--amber);
-        cursor:pointer;user-select:none;margin-top:10px}
+  .ring{border:1px dashed var(--red);border-radius:12px;padding:16px;margin:10px 0;background:var(--red-bg)}
+  .ring-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ring-title{font-size:14px;font-weight:700;color:var(--red)}
+  .kv{font-size:12.5px;color:var(--dim);line-height:1.7} .kv b{color:var(--txt)}
+  .stage-check{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--amber);
+       cursor:pointer;user-select:none;margin-top:10px;font-weight:600}
   .stage-check input{accent-color:var(--red);width:16px;height:16px;cursor:pointer}
 
-  table.rank{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
-  table.rank th{text-align:left;color:var(--faint);font-size:10.5px;letter-spacing:1.5px;
-        padding:8px 10px;border-bottom:1px solid var(--line)}
-  table.rank td{padding:9px 10px;border-bottom:1px solid rgba(31,39,51,.6)}
-  table.rank tr:hover td{background:rgba(90,169,255,.05)}
-  .bar{height:6px;border-radius:3px;background:rgba(90,169,255,.15);overflow:hidden;min-width:110px}
-  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--purple))}
-  .risk-badge{color:var(--red);font-weight:700} .frozen-badge{color:var(--purple);font-weight:700}
+  table.rank{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  table.rank th{text-align:left;color:var(--faint);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;
+       padding:10px;border-bottom:2px solid var(--line)}
+  table.rank td{padding:10px;border-bottom:1px solid var(--line)}
+  table.rank tr:hover td{background:var(--panel2)}
+  .bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden;min-width:110px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:4px}
+  .risk-badge{color:var(--red);font-weight:700;font-size:12px}
+  .frozen-badge{color:var(--purple);font-weight:700;font-size:12px}
 
-  /* ---------- freeze climax ---------- */
-  .step.climax{border-color:rgba(255,59,71,.6);box-shadow:0 0 40px rgba(255,59,71,.08)}
-  #staged{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;min-height:34px}
-  .staged-chip{background:rgba(255,59,71,.12);border:1px solid var(--red);color:#ffc9cd;
-        padding:6px 8px 6px 12px;border-radius:20px;font-size:12px;font-weight:700;
-        display:flex;align-items:center;gap:8px}
-  .staged-chip button{padding:2px 8px;font-size:11px;background:transparent;border:none;color:var(--red)}
-  .staged-empty{color:var(--faint);font-size:12px;align-self:center}
-  #btnFreeze{font-size:16px;padding:16px 34px;letter-spacing:3px;margin-top:8px;
-        box-shadow:0 0 24px rgba(255,59,71,.35)}
-  .casefile{margin-top:18px;border:1px solid var(--line);border-radius:12px;
-        background:linear-gradient(180deg,#0d1117,#0a0d12);padding:22px;position:relative;overflow:hidden}
+  .tool.climax{border-color:var(--red-line);box-shadow:0 0 0 1px var(--red-line),var(--shadow-lg)}
+  #staged{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;min-height:36px}
+  .staged-chip{background:var(--red-bg);border:1px solid var(--red);color:var(--red);
+       padding:6px 8px 6px 14px;border-radius:100px;font-size:12px;font-weight:700;
+       display:flex;align-items:center;gap:8px}
+  .staged-chip button{padding:2px 8px;font-size:11px;background:transparent;border:none;color:var(--red);cursor:pointer}
+  .staged-empty{color:var(--faint);font-size:12.5px;align-self:center}
+  #btnFreeze{font-size:15px;padding:15px 32px;letter-spacing:2px;box-shadow:0 6px 20px rgba(220,38,38,.4)}
+  #btnFreeze.armed{background:#fff;color:var(--red);border:2px solid var(--red);animation:blink .7s steps(2) infinite}
+  @keyframes blink{50%{opacity:.6}}
+
+  .casefile{margin-top:18px;border:1px solid var(--line);border-radius:14px;
+       background:var(--panel2);padding:24px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
   .stamp{position:absolute;top:18px;right:22px;transform:rotate(12deg);
-        border:3px solid var(--red);color:var(--red);font-weight:700;font-size:20px;
-        letter-spacing:4px;padding:8px 16px;border-radius:6px;
-        box-shadow:0 0 20px rgba(255,59,71,.4);animation:stampIn .35s cubic-bezier(.2,2.4,.4,1)}
+       border:3px solid var(--red);color:var(--red);font-weight:800;font-size:20px;
+       letter-spacing:4px;padding:8px 18px;border-radius:8px;
+       box-shadow:0 0 20px rgba(220,38,38,.3);animation:stampIn .35s cubic-bezier(.2,2.4,.4,1)}
   @keyframes stampIn{from{transform:rotate(12deg) scale(2.4);opacity:0}to{transform:rotate(12deg) scale(1);opacity:1}}
-  .casefile h3{margin:0 0 2px;font-size:13px;letter-spacing:3px;color:var(--dim)}
-  .case-id{font-size:22px;font-weight:700;color:var(--txt);margin-bottom:12px}
+  .casefile h3{margin:0 0 4px;font-size:12px;letter-spacing:2px;color:var(--dim);font-weight:700}
+  .case-id{font-size:24px;font-weight:800;margin-bottom:14px;letter-spacing:-.5px}
   .case-id span{color:var(--red)}
-  .case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:12.5px}
-  .case-grid .kv{background:#04060a;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:13px}
+  .case-grid .kv{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .err{color:var(--red);font-size:13px;margin-top:10px;font-weight:500}
+  .okline{color:var(--green);font-size:13px;margin-top:10px;font-weight:500}
+  .export-bar{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 
-  .err{color:#ff8087;font-size:12.5px;margin-top:10px}
-  .okline{color:var(--green);font-size:12.5px;margin-top:10px}
-  .loading{color:var(--dim);font-size:12.5px;margin-top:10px}
-  .loading::after{content:"";animation:dots 1s steps(4) infinite}
-  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
-
-  footer{max-width:1280px;margin:0 auto;padding:0 22px 40px;color:var(--faint);font-size:11.5px;line-height:1.8}
-  footer b{color:var(--dim)}
-  @media(max-width:900px){.stats{margin-left:0}.hbar{gap:12px}}
+  #printReport{display:none}
+  @media print{
+    body{background:#fff!important;color:#111!important}
+    #landing,#app,.no-print{display:none!important}
+    #printReport{display:block!important;font-family:var(--font);padding:40px;max-width:800px;margin:0 auto}
+    #printReport h1{font-size:28px;border-bottom:3px solid #dc2626;padding-bottom:12px}
+    #printReport h2{font-size:18px;color:#dc2626;margin-top:28px}
+    #printReport table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+    #printReport th,#printReport td{border:1px solid #ddd;padding:8px 10px;text-align:left}
+    #printReport th{background:#f5f5f5}
+    #printReport pre{background:#f5f5f5;padding:12px;border-radius:8px;font-size:11px;overflow-x:auto}
+    #printReport .meta{color:#666;font-size:12px}
+  }
+  @media(max-width:900px){.stat-chips{margin-left:0}.hero{padding:60px 0 50px}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="hbar">
-    <div class="logo">
-      <div class="eye"></div>
-      <div>
-        <h1>FRAUD<span>LENS</span></h1>
-        <div class="tag">AUTONOMOUS FRAUD INVESTIGATION UNIT · TRACK 01</div>
-      </div>
-    </div>
-    <div class="stats">
-      <div class="chip">PERSONS<b id="stPersons">…</b></div>
-      <div class="chip">ACCOUNTS<b id="stAccounts">…</b></div>
-      <div class="chip">TRANSFERS<b id="stTransfers">…</b></div>
-      <div class="chip hot">FROZEN<b id="stFrozen">…</b></div>
-      <div class="chip cool">CASES<b id="stCases">…</b></div>
+<!-- ==================== APP ==================== -->
+<div id="app">
+  <nav class="app-nav"><div class="app-nav-inner">
+    <div class="logo" style="cursor:pointer" onclick="void(0)"><div class="logo-mark">◉</div>FRAUD<span>LENS</span></div>
+    <div class="stat-chips">
+      <div class="chip">Persons<b id="stPersons">…</b></div>
+      <div class="chip">Accounts<b id="stAccounts">…</b></div>
+      <div class="chip">Transfers<b id="stTransfers">…</b></div>
+      <div class="chip hot">Frozen<b id="stFrozen">…</b></div>
+      <div class="chip cool">Cases<b id="stCases">…</b></div>
     </div>
     <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">CONNECTING…</span></div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+    <button class="btn btn-ghost btn-sm" onclick="void(0)">← Home</button>
+  </div></nav>
+  <div class="demo-strip">⚡ <b>60-second demo:</b> ① type <b>A-4000</b> → Investigate &nbsp;② Scan for rings &nbsp;③ stage a ring &nbsp;④ <b>EXECUTE FREEZE</b> — then export the PDF.</div>
+
+  <div class="app-main">
+    <div class="term no-print">
+      <div class="term-head"><span class="tl">●</span><span class="tl2">●</span><span class="tl3">●</span> AGENT ACTIVITY — every decision, on the record</div>
+      <div id="agentLog"><div class="dim">agent standing by — run an investigation step below.</div></div>
+    </div>
+
+    <div class="alerts" id="alertRow" hidden></div>
+
+    <section class="tool">
+      <div class="tool-num">01</div>
+      <h2><span class="k">▸</span> TRACE THE MONEY</h2>
+      <div class="desc">The agent takes a suspect account and lets the <b>graph</b> decide where the money went — a multi-hop transfer traversal no vector DB can express. Try <b>A-4000</b> (a planted mule).</div>
+      <div class="controls no-print">
+        <input type="text" id="acct" value="A-4000" spellcheck="false" placeholder="Account id, e.g. A-4000">
+        <input type="range" id="depth" min="1" max="5" value="3">
+        <span class="depth-val">depth <b id="depthVal">3</b></span>
+        <button id="btnTrace" class="btn btn-outline btn-sm">🔍 INVESTIGATE</button>
+      </div>
+      <div class="results" id="traceResults" hidden>
+        <canvas class="graph no-print" id="traceCanvas"></canvas>
+        <div id="traceList"></div>
+        <div id="traceCypher"></div>
+      </div>
+    </section>
+
+    <section class="tool">
+      <div class="tool-num">02</div>
+      <h2><span class="k">▸</span> HUNT THE RING</h2>
+      <div class="desc">Mule networks reuse infrastructure. The agent finds <b>4+ accounts sharing one device</b>, then pulls the IPs they share — the classic fraud-ring fingerprint, as a single graph pattern.</div>
+      <div class="controls no-print">
+        <button id="btnRing" class="btn btn-outline btn-sm">🕸 SCAN FOR RINGS</button>
+      </div>
+      <div class="results" id="ringResults" hidden>
+        <canvas class="graph no-print" id="ringCanvas"></canvas>
+        <div id="ringList"></div>
+        <div id="ringCypher"></div>
+      </div>
+    </section>
+
+    <section class="tool">
+      <div class="tool-num">03</div>
+      <h2><span class="k">▸</span> FIND THE HUB</h2>
+      <div class="desc">Laundering hubs sit at the center of mule networks. The agent runs <b>PageRank over transfer edges</b> — the highest-scoring accounts are the network's kingpins, found with zero labels.</div>
+      <div class="controls no-print">
+        <button id="btnPR" class="btn btn-outline btn-sm">🎯 RANK HUBS</button>
+      </div>
+      <div class="results" id="prResults" hidden>
+        <div id="prTable"></div>
+        <div id="prCypher"></div>
+      </div>
+    </section>
+
+    <section class="tool climax">
+      <div class="tool-num">04</div>
+      <h2><span class="k">▸</span> EXECUTE FREEZE <span style="color:var(--faint);font-size:11px;font-weight:500">— THE AGENT ACTS</span></h2>
+      <div class="desc">Reading the graph was reconnaissance. <b>This is the action.</b> The agent freezes every staged account and writes a <b>(:Case)-[:TARGETS]->(:Account)</b> case file into the graph — memory the next investigation builds on.</div>
+      <div class="controls no-print">
+        <input type="text" id="manualIds" spellcheck="false" placeholder="add manually: A-4010,A-4011">
+        <button id="btnAddManual" class="btn btn-ghost btn-sm">+ ADD</button>
+        <input type="text" id="investigator" spellcheck="false" placeholder="investigator label (optional)" style="min-width:200px">
+      </div>
+      <div id="staged"><span class="staged-empty">no accounts staged — tick "stage for freeze" on a ring or hub above, or add manually.</span></div>
+      <div class="controls no-print">
+        <input type="text" id="reason" value="Suspected fraud ring — agent action" style="min-width:300px">
+        <button id="btnFreeze" class="btn btn-primary">⚡ EXECUTE FREEZE</button>
+      </div>
+      <div class="results" id="freezeResults" hidden>
+        <div class="casefile" id="caseFile"></div>
+        <canvas class="graph no-print" id="freezeCanvas"></canvas>
+        <div id="freezeCypher"></div>
+        </div>
+    </section>
   </div>
-  <div class="demo-hint">⚡ <b>60-second demo:</b> ① type <b>A-4000</b> → Investigate &nbsp;② Scan for rings &nbsp;③ stage a ring &nbsp;④ <b>EXECUTE FREEZE</b> — watch the case file hit the graph.</div>
-</header>
-
-<main>
-  <div class="term">
-    <div class="term-head"><span class="tl">●</span><span class="tl2">●</span><span class="tl3">●</span> AGENT ACTIVITY — every decision, on the record</div>
-    <div id="agentLog"><div class="dim">agent standing by — run an investigation step below.</div></div>
-  </div>
-
-  <!-- STEP 01 -->
-  <section class="step" data-n="01">
-    <h2><span class="k">▸</span> TRACE THE MONEY</h2>
-    <div class="desc">The agent takes a suspect account and lets the <b>graph</b> decide where the money went — a multi-hop <span style="color:var(--amber)">TRANSFERRED</span> traversal no vector DB can express, and 4+ joins in SQL. Try <b>A-4000</b> (a planted mule).</div>
-    <div class="controls">
-      <input type="text" id="acct" value="A-4000" spellcheck="false" placeholder="Account id, e.g. A-4000">
-      <input type="range" id="depth" min="1" max="5" value="3">
-      <span class="depth-val">depth <b id="depthVal">3</b></span>
-      <button id="btnTrace" class="ghost">🔍 INVESTIGATE</button>
-    </div>
-    <div class="results" id="traceResults" hidden>
-      <canvas class="graph" id="traceCanvas"></canvas>
-      <div id="traceList"></div>
-      <div id="traceCypher"></div>
-    </div>
-  </section>
-
-  <!-- STEP 02 -->
-  <section class="step" data-n="02">
-    <h2><span class="k">▸</span> HUNT THE RING</h2>
-    <div class="desc">Mule networks reuse infrastructure. The agent finds <b>4+ accounts sharing one device</b>, then pulls the IPs they share — the classic fraud-ring fingerprint, as a single graph pattern.</div>
-    <div class="controls">
-      <button id="btnRing" class="ghost">🕸 SCAN FOR RINGS</button>
-    </div>
-    <div class="results" id="ringResults" hidden>
-      <canvas class="graph" id="ringCanvas"></canvas>
-      <div id="ringList"></div>
-      <div id="ringCypher"></div>
-    </div>
-  </section>
-
-  <!-- STEP 03 -->
-  <section class="step" data-n="03">
-    <h2><span class="k">▸</span> FIND THE HUB</h2>
-    <div class="desc">Laundering hubs sit at the center of mule networks. The agent runs <b>PageRank over TRANSFERRED edges</b> — the highest-scoring accounts are the network's kingpins, found with zero labels.</div>
-    <div class="controls">
-      <button id="btnPR" class="ghost">🎯 RANK HUBS</button>
-    </div>
-    <div class="results" id="prResults" hidden>
-      <div id="prTable"></div>
-      <div id="prCypher"></div>
-    </div>
-  </section>
-
-  <!-- STEP 04 — THE CLIMAX -->
-  <section class="step climax" data-n="04">
-    <h2><span class="k">▸</span> EXECUTE FREEZE <span style="color:var(--faint);font-size:11px;letter-spacing:1px">— THE AGENT ACTS</span></h2>
-    <div class="desc">Reading the graph was reconnaissance. <b>This is the action.</b> The agent freezes every staged account (<span style="color:var(--purple)">frozen=true</span>) and writes a <span style="color:var(--amber)">(:Case)-[:TARGETS]->(:Account)</span> case file into the graph — memory the next investigation can build on. This write is the <i>only</i> mutation the API allows.</div>
-    <div class="controls">
-      <input type="text" id="manualIds" spellcheck="false" placeholder="add manually: A-4010,A-4011">
-      <button id="btnAddManual" class="mini ghost">+ ADD</button>
-      <input type="text" id="investigator" spellcheck="false" placeholder="investigator label (optional)" style="min-width:220px">
-    </div>
-    <div id="staged"><span class="staged-empty">no accounts staged — tick “stage for freeze” on a ring or hub above, or add manually.</span></div>
-    <div class="controls">
-      <input type="text" id="reason" value="Suspected fraud ring — agent action" style="min-width:340px">
-      <button id="btnFreeze" class="primary">⚡ EXECUTE FREEZE</button>
-    </div>
-    <div class="results" id="freezeResults" hidden>
-      <div class="casefile" id="caseFile"></div>
-      <canvas class="graph" id="freezeCanvas"></canvas>
-      <div id="freezeCypher"></div>
-    </div>
-  </section>
-</main>
-
-<footer>
-  <b>FRAUDLENS v2</b> — WeMakeDevs × FalkorDB “Graph Hacks”, Track 01: Agents That Act on Connected Data.<br>
-  Agent tools are graph queries; the freeze is a graph write. Every panel above shows the <b>exact Cypher</b> the agent ran — the graph is load-bearing, not decorative.<br>
-  Synthetic data: 75 persons · 95 accounts · ~660 transfers · 3 planted fraud rings. Built with AI assistance (disclosed in README).
-</footer>
+</div>
 
 <script>
 "use strict";
-/* ============================== helpers ============================== */
+/* ============ theme / views ============ */
+function toggleTheme(){
+  const h = document.documentElement;
+  const next = h.dataset.theme === "light" ? "dark" : "light";
+  h.dataset.theme = next;
+  document.querySelectorAll(".theme-toggle").forEach(b => b.textContent = next === "light" ? "🌙" : "☀️");
+  try{ localStorage.setItem("fraudlens-theme", next); }catch(e){}
+  drawMiniGraph();
+}
+try{
+  const saved = localStorage.getItem("fraudlens-theme");
+  if(saved){ document.documentElement.dataset.theme = saved;
+    document.querySelectorAll(".theme-toggle").forEach(b => b.textContent = saved === "light" ? "🌙" : "☀️"); }
+}catch(e){}
+function showApp(){
+  document.getElementById("landing").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  window.scrollTo(0,0);
+  if(!window._appInit){ window._appInit = true; renderStaged(); loadStats();
+    agentLog(`agent online — graph <b>fraudlens</b>. run an investigation step below.`, "dim"); }
+  setTimeout(()=>{ ["traceCanvas","ringCanvas","freezeCanvas"].forEach(id=>{
+    const c = document.getElementById(id); if(c && c.clientWidth) drawGraph(c,[],[]); }); }, 60);
+}
+
+
+/* ============ hero mini graph ============ */
+function drawMiniGraph(){
+  const el = document.getElementById("miniGraph");
+  if(!el) return;
+  const dark = document.documentElement.dataset.theme === "dark";
+  const nodes = [
+    {x:50,y:50,c:"var(--blue)",t:"A-4000"},
+    {x:22,y:28,c:"var(--red)",t:"A-4011"},
+    {x:78,y:28,c:"var(--red)",t:"A-4012"},
+    {x:18,y:68,c:"var(--red)",t:"A-4013"},
+    {x:82,y:68,c:"var(--red)",t:"A-4014"},
+    {x:50,y:88,c:"var(--amber)",t:"DEV-7"},
+  ];
+  let h = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;position:absolute;inset:0">`;
+  [[50,50,22,28],[50,50,78,28],[50,50,18,68],[50,50,82,68],[50,50,50,88]].forEach(([x1,y1,x2,y2])=>{
+    h += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${dark?"#ff3b47":"#dc2626"}" stroke-width=".7" opacity=".6"/>`;
+  });
+  h += `</svg>`;
+  nodes.forEach(n=>{
+    h += `<div class="mini-node" style="left:${n.x}%;top:${n.y}%;transform:translate(-50%,-50%);background:${n.c}22;border:2px solid ${n.c};color:${n.c}">${n.t}</div>`;
+  });
+  el.innerHTML = h;
+}
+drawMiniGraph();
+
+/* ============ helpers ============ */
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const fmtINR = n => "₹" + Number(n).toLocaleString("en-IN", {maximumFractionDigits: 0});
 const nowT = () => new Date().toTimeString().slice(0, 8);
+const isDark = () => document.documentElement.dataset.theme === "dark";
 
 function agentLog(html, cls) {
   const el = $("agentLog");
@@ -275,7 +433,6 @@ function agentLog(html, cls) {
   el.appendChild(d);
   el.scrollTop = el.scrollHeight;
 }
-
 async function post(url, body) {
   const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"},
                               body: JSON.stringify(body || {})});
@@ -283,11 +440,10 @@ async function post(url, body) {
   if (!r.ok) throw new Error(j.detail || ("HTTP " + r.status));
   return j;
 }
-
 function cypherHTML(d) {
   return `<div class="cypher">
     <div class="cypher-head"><span>▸ CYPHER — the exact query the agent ran</span>
-      <button class="mini ghost" data-copy="${esc(encodeURIComponent(d.cypher))}">⧉ COPY</button></div>
+      <button class="btn btn-ghost btn-sm no-print" data-copy="${esc(encodeURIComponent(d.cypher))}">⧉ COPY</button></div>
     <pre>${esc(d.cypher)}</pre>
     <div class="cypher-meta">⚡ executed in ${d.ms} ms · params ${esc(JSON.stringify(d.params))}</div>
   </div>`;
@@ -300,116 +456,104 @@ document.addEventListener("click", e => {
   });
 });
 const setBusy = (btn, busy) => {
-  if (busy) {
-    if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
-    btn.innerHTML = "WORKING…";
-  } else {
-    btn.innerHTML = btn.dataset.label || btn.innerHTML;
-  }
+  if (busy) { if (!btn.dataset.label) btn.dataset.label = btn.innerHTML; btn.innerHTML = "WORKING…"; }
+  else { btn.innerHTML = btn.dataset.label || btn.innerHTML; }
   btn.disabled = busy;
 };
 
-/* ====================== hand-rolled graph renderer ====================== */
-const NODE_STYLE = {
-  account: {r: 15, fill: "#12233d", ring: "#5aa9ff", glow: "rgba(90,169,255,.55)"},
-  frozen:  {r: 15, fill: "#1d1440", ring: "#b07fff", glow: "rgba(176,127,255,.6)"},
-  risk:     {r: 17, fill: "#2b1013", ring: "#ff3b47", glow: "rgba(255,59,71,.6)"},
-  device:  {r: 18, fill: "#241b08", ring: "#f0a832", glow: "rgba(240,168,50,.55)"},
-  ip:      {r: 13, fill: "#0a2422", ring: "#3fd4c1", glow: "rgba(63,212,193,.5)"},
-  case:    {r: 20, fill: "#2b1013", ring: "#ff3b47", glow: "rgba(255,59,71,.7)"},
-  person:  {r: 11, fill: "#1a2029", ring: "#8b98a9", glow: "rgba(139,152,169,.4)"},
-};
-
-/* Dedicated radial renderer for fraud rings: device at center,
-   accounts on a clean circle, IPs tucked below. Deterministic —
-   no force-directed randomness, fits the canvas every time. */
+/* ============ graph renderer (theme-aware) ============ */
+function pal(){
+  return isDark() ? {
+    account:{r:15,fill:"#12233d",ring:"#5aa9ff",glow:"rgba(90,169,255,.55)"},
+    frozen:{r:15,fill:"#1d1440",ring:"#b07fff",glow:"rgba(176,127,255,.6)"},
+    risk:{r:17,fill:"#2b1013",ring:"#ff3b47",glow:"rgba(255,59,71,.6)"},
+    device:{r:18,fill:"#241b08",ring:"#f0a832",glow:"rgba(240,168,50,.55)"},
+    ip:{r:13,fill:"#0a2422",ring:"#3fd4c1",glow:"rgba(63,212,193,.5)"},
+    case:{r:20,fill:"#2b1013",ring:"#ff3b47",glow:"rgba(255,59,71,.7)"},
+    person:{r:11,fill:"#1a2029",ring:"#8b98a9",glow:"rgba(139,152,169,.4)"},
+    edge:"rgba(139,152,169,.4)", edgeHot:"rgba(255,59,71,.85)", edgeLbl:"#3ddc84",
+    edgeLblBg:"rgba(4,6,10,.88)", empty:"#5a6678", txt:"#e8eef5", hotTxt:"#ff8f96"
+  } : {
+    account:{r:15,fill:"#eff6ff",ring:"#2563eb",glow:"rgba(37,99,235,.3)"},
+    frozen:{r:15,fill:"#f5f3ff",ring:"#7c3aed",glow:"rgba(124,58,237,.3)"},
+    risk:{r:17,fill:"#fef2f2",ring:"#dc2626",glow:"rgba(220,38,38,.35)"},
+    device:{r:18,fill:"#fffbeb",ring:"#d97706",glow:"rgba(217,119,6,.3)"},
+    ip:{r:13,fill:"#f0fdfa",ring:"#0d9488",glow:"rgba(13,148,136,.3)"},
+    case:{r:20,fill:"#fef2f2",ring:"#dc2626",glow:"rgba(220,38,38,.4)"},
+    person:{r:11,fill:"#f1f5f9",ring:"#64748b",glow:"rgba(100,116,139,.3)"},
+    edge:"rgba(100,116,139,.45)", edgeHot:"rgba(220,38,38,.8)", edgeLbl:"#16a34a",
+    edgeLblBg:"rgba(255,255,255,.92)", empty:"#94a3b8", txt:"#0f172a", hotTxt:"#dc2626"
+  };
+}
 function drawRing(canvas, deviceLabel, accountIds, ips) {
+  const P = pal();
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth || 800, H = 340;
   canvas.width = W * dpr; canvas.height = H * dpr;
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-
   const cx = W / 2, cy = H / 2 - 8;
   const R = Math.max(70, Math.min(W / 2 - 90, H / 2 - 70));
   const n = accountIds.length;
-
-  // account positions on circle
   const acctPos = accountIds.map((a, i) => {
     const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
     return {x: cx + Math.cos(ang) * R, y: cy + Math.sin(ang) * R, label: a};
   });
-
-  // edges: device -> accounts (hot red)
   ctx.lineWidth = 1.6;
   for (const p of acctPos) {
-    ctx.strokeStyle = "rgba(255,59,71,.55)";
+    ctx.strokeStyle = P.edgeHot;
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p.x, p.y); ctx.stroke();
   }
-  // edges: device -> ips (teal, short stubs below device)
   const ipPos = (ips || []).map((ip, i) => ({
     x: cx + (i - ((ips.length - 1) / 2)) * 120, y: cy + R + 42, label: ip
   }));
   for (const p of ipPos) {
-    ctx.strokeStyle = "rgba(63,212,193,.5)";
-    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = P.ip.ring; ctx.globalAlpha = .6; ctx.setLineDash([4, 4]);
     ctx.beginPath(); ctx.moveTo(cx, cy + 18); ctx.lineTo(p.x, p.y - 13); ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
   }
-
-  const node = (x, y, r, fill, ring, glow, label, sub, subColor) => {
-    ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = 14;
-    ctx.fillStyle = fill; ctx.strokeStyle = ring; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  const node = (x, y, s, label, sub) => {
+    ctx.save(); ctx.shadowColor = s.glow; ctx.shadowBlur = 14;
+    ctx.fillStyle = s.fill; ctx.strokeStyle = s.ring; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, s.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.restore();
-    ctx.font = "700 11px monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#e8eef5";
+    ctx.font = "700 11px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = P.txt;
     const short = label.length > 16 ? label.slice(0, 15) + "…" : label;
-    ctx.fillText(short, x, y + r + 15);
-    if (sub) {
-      ctx.font = "700 9px monospace"; ctx.fillStyle = subColor || ring;
-      ctx.fillText(sub, x, y + r + 27);
-    }
+    ctx.fillText(short, x, y + s.r + 15);
+    if (sub) { ctx.font = "700 9px sans-serif"; ctx.fillStyle = s.ring; ctx.fillText(sub, x, y + s.r + 27); }
   };
-
-  for (const p of ipPos) node(p.x, p.y, 13, "#0a2422", "#3fd4c1", "rgba(63,212,193,.5)", p.label, "SHARED IP");
-  for (const p of acctPos) node(p.x, p.y, 17, "#2b1013", "#ff3b47", "rgba(255,59,71,.6)", p.label, "MULE");
-  node(cx, cy, 20, "#241b08", "#f0a832", "rgba(240,168,50,.6)", deviceLabel, "SHARED DEVICE", "#f0a832");
+  for (const p of ipPos) node(p.x, p.y, P.ip, p.label, "SHARED IP");
+  for (const p of acctPos) node(p.x, p.y, P.risk, p.label, "MULE");
+  node(cx, cy, P.device, deviceLabel, "SHARED DEVICE");
 }
-
 function drawGraph(canvas, nodes, edges) {
+  const P = pal();
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth || 800, H = 340;
   canvas.width = W * dpr; canvas.height = H * dpr;
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-
   if (!nodes.length) {
-    ctx.fillStyle = "#5a6678"; ctx.font = "13px monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = P.empty; ctx.font = "13px sans-serif"; ctx.textAlign = "center";
     ctx.fillText("no graph data", W / 2, H / 2);
     return;
   }
-
-  // deterministic start: ring layout
   const cx = W / 2, cy = H / 2, R0 = Math.max(60, Math.min(W, H) / 2 - 56);
   nodes.forEach((n, i) => {
     const a = (i / nodes.length) * Math.PI * 2 - Math.PI / 2;
     n.x = cx + Math.cos(a) * R0; n.y = cy + Math.sin(a) * R0;
   });
   const byKey = Object.fromEntries(nodes.map(n => [n.key, n]));
-
-  // force-directed relaxation (position iteration, no velocity needed)
   for (let t = 0; t < 220; t++) {
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i], b = nodes[j];
-        let dx = a.x - b.x, dy = a.y - b.y;
-        const d = Math.hypot(dx, dy) || 1;
-        const f = Math.min(5200 / (d * d), 22);
-        dx /= d; dy /= d;
-        a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
-      }
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const f = Math.min(5200 / (d * d), 22);
+      dx /= d; dy /= d;
+      a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
     }
     for (const e of edges) {
       const a = byKey[e.a], b = byKey[e.b];
@@ -421,66 +565,51 @@ function drawGraph(canvas, nodes, edges) {
       a.x += dx * f * d * 0.5; a.y += dy * f * d * 0.5;
       b.x -= dx * f * d * 0.5; b.y -= dy * f * d * 0.5;
     }
-    for (const n of nodes) { // gentle gravity + bounds
+    for (const n of nodes) {
       n.x += (cx - n.x) * 0.008; n.y += (cy - n.y) * 0.008;
       n.x = Math.max(46, Math.min(W - 46, n.x));
       n.y = Math.max(34, Math.min(H - 30, n.y));
     }
   }
-
-  // edges
   ctx.lineWidth = 1.4;
   for (const e of edges) {
     const a = byKey[e.a], b = byKey[e.b];
     if (!a || !b) continue;
-    const sa = NODE_STYLE[a.type] || NODE_STYLE.account;
-    const sb = NODE_STYLE[b.type] || NODE_STYLE.account;
+    const sa = P[a.type] || P.account, sb = P[b.type] || P.account;
     const ang = Math.atan2(b.y - a.y, b.x - a.x);
     const x1 = a.x + Math.cos(ang) * (sa.r + 2), y1 = a.y + Math.sin(ang) * (sa.r + 2);
     const x2 = b.x - Math.cos(ang) * (sb.r + 4), y2 = b.y - Math.sin(ang) * (sb.r + 4);
-    ctx.strokeStyle = e.hot ? "rgba(255,59,71,.85)" : "rgba(139,152,169,.4)";
+    ctx.strokeStyle = e.hot ? P.edgeHot : P.edge;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    // arrowhead
-    ctx.fillStyle = e.hot ? "rgba(255,59,71,.9)" : "rgba(139,152,169,.55)";
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
+    ctx.fillStyle = e.hot ? P.edgeHot : P.edge;
+    ctx.beginPath(); ctx.moveTo(x2, y2);
     ctx.lineTo(x2 - 8 * Math.cos(ang - 0.42), y2 - 8 * Math.sin(ang - 0.42));
     ctx.lineTo(x2 - 8 * Math.cos(ang + 0.42), y2 - 8 * Math.sin(ang + 0.42));
     ctx.closePath(); ctx.fill();
-    // edge label
     if (e.label) {
       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-      ctx.font = "10.5px monospace"; ctx.textAlign = "center";
+      ctx.font = "600 10.5px sans-serif"; ctx.textAlign = "center";
       const w = ctx.measureText(e.label).width + 10;
-      ctx.fillStyle = "rgba(4,6,10,.88)";
-      ctx.fillRect(mx - w / 2, my - 8, w, 15);
-      ctx.fillStyle = e.hot ? "#ff8f96" : "#3ddc84";
+      ctx.fillStyle = P.edgeLblBg; ctx.fillRect(mx - w / 2, my - 8, w, 15);
+      ctx.fillStyle = e.hot ? P.hotTxt : P.edgeLbl;
       ctx.fillText(e.label, mx, my + 4);
     }
   }
-
-  // nodes
   for (const n of nodes) {
-    const s = NODE_STYLE[n.type] || NODE_STYLE.account;
-    ctx.save();
-    ctx.shadowColor = s.glow; ctx.shadowBlur = 14;
-    ctx.fillStyle = s.fill;
-    ctx.strokeStyle = s.ring; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(n.x, n.y, s.r, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
+    const s = P[n.type] || P.account;
+    ctx.save(); ctx.shadowColor = s.glow; ctx.shadowBlur = 14;
+    ctx.fillStyle = s.fill; ctx.strokeStyle = s.ring; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(n.x, n.y, s.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.restore();
-    ctx.font = "700 11px monospace"; ctx.textAlign = "center";
-    ctx.fillStyle = "#e8eef5";
+    ctx.font = "700 11px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = P.txt;
     const label = n.label.length > 14 ? n.label.slice(0, 13) + "…" : n.label;
     ctx.fillText(label, n.x, n.y + s.r + 15);
-    if (n.sub) {
-      ctx.font = "700 9px monospace"; ctx.fillStyle = s.ring;
-      ctx.fillText(n.sub, n.x, n.y + s.r + 27);
-    }
+    if (n.sub) { ctx.font = "700 9px sans-serif"; ctx.fillStyle = s.ring;
+      ctx.fillText(n.sub, n.x, n.y + s.r + 27); }
   }
 }
 
-/* ============================== stats ============================== */
+/* ============ stats ============ */
 async function loadStats() {
   try {
     const r = await fetch("/api/graph/stats");
@@ -499,9 +628,8 @@ async function loadStats() {
   }
 }
 
-/* ============================== STEP 01 · trace ============================== */
+/* ============ TOOL 01 trace ============ */
 $("depth").oninput = () => { $("depthVal").textContent = $("depth").value; };
-
 $("btnTrace").onclick = async () => {
   const acct = $("acct").value.trim(), depth = +$("depth").value;
   if (!acct) return;
@@ -509,8 +637,8 @@ $("btnTrace").onclick = async () => {
   agentLog(`▸ <b>trace_hops</b>(account="${esc(acct)}", depth=${depth}) — asking the graph…`, "cmd");
   try {
     const d = await post("/api/tools/trace_hops", {account: acct, depth});
+    window._lastTrace = {acct, depth, d};
     agentLog(`✓ <b>${d.rows.length}</b> money-trail path(s) · ${d.ms} ms — the graph decided`, "ok");
-
     const p = d.rows[0].path;
     const nodeByInternal = {};
     p.nodes.forEach(n => { nodeByInternal[n.id] = n; });
@@ -525,7 +653,6 @@ $("btnTrace").onclick = async () => {
       return {a: e.src, b: e.dst, label: fmtINR(e.props.amount), hot};
     });
     drawGraph($("traceCanvas"), nodes, edges);
-
     let h = "";
     d.rows.slice(0, 8).forEach((r, i) => {
       h += `<div class="hop"><span class="hop-n">#${i + 1}</span>`;
@@ -551,15 +678,11 @@ $("btnTrace").onclick = async () => {
   setBusy(btn, false);
 };
 
-/* ============================== STEP 02 · rings ============================== */
-const staged = new Set();   // accounts staged for the freeze action
-
+/* ============ TOOL 02 rings ============ */
+const staged = new Set();
 function ringCard(r, i) {
-  const ids = r.account_ids.map(esc).join(" ");
   return `<div class="ring">
-    <div class="ring-top">
-      <span class="ring-title">🚨 RING ${i + 1} — ${r.ring_size} accounts</span>
-    </div>
+    <div class="ring-top"><span class="ring-title">🚨 RING ${i + 1} — ${r.ring_size} accounts</span></div>
     <div class="kv">shared device <b>${esc(r.device_id)}</b></div>
     <div class="kv">shared IPs <b>${r.ips.map(esc).join(", ")}</b></div>
     <div class="hop" style="margin-top:8px">${r.account_ids.map(a => `<span class="pill risk">${esc(a)}</span>`).join("")}</div>
@@ -567,11 +690,21 @@ function ringCard(r, i) {
       stage these ${r.ring_size} accounts for freeze</label>
   </div>`;
 }
-
+function renderAlertCards(rings){
+  const el = $("alertRow");
+  if(!rings || !rings.length){ el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  el.innerHTML = rings.map((r,i) => `
+    <div class="alert-card">
+      <div class="a-top"><span class="a-badge">🚨 HIGH RISK</span><h3>Fraud Ring ${i+1}</h3></div>
+      <div class="a-meta"><b>${r.ring_size}</b> mule accounts · device <b>${esc(r.device_id)}</b><br>
+      shared IPs: <b>${r.ips.map(esc).join(", ")}</b></div>
+    </div>`).join("");
+}
 function renderStaged() {
   const el = $("staged");
   if (!staged.size) {
-    el.innerHTML = `<span class="staged-empty">no accounts staged — tick “stage for freeze” on a ring or hub above, or add manually.</span>`;
+    el.innerHTML = `<span class="staged-empty">no accounts staged — tick "stage for freeze" on a ring or hub above, or add manually.</span>`;
     return;
   }
   el.innerHTML = [...staged].map(a =>
@@ -590,10 +723,8 @@ document.addEventListener("change", e => {
     agentLog(c.checked ? `▸ staged ring ${+c.dataset.ring + 1} (${ids.length} accounts) for freeze` : `▸ un-staged ring ${+c.dataset.ring + 1}`, "dim");
   }
   const p = e.target.closest("[data-hub]");
-  if (p) {
-    p.checked ? staged.add(p.dataset.hub) : staged.delete(p.dataset.hub);
-    renderStaged(); syncRingChecks();
-  }
+  if (p) { p.checked ? staged.add(p.dataset.hub) : staged.delete(p.dataset.hub);
+    renderStaged(); syncRingChecks(); }
 });
 function syncRingChecks() {
   document.querySelectorAll("[data-ring]").forEach(c => {
@@ -601,18 +732,16 @@ function syncRingChecks() {
     if (r) c.checked = r.account_ids.every(a => staged.has(a));
   });
 }
-
 $("btnRing").onclick = async () => {
   const btn = $("btnRing"); setBusy(btn, true);
   agentLog(`▸ <b>find_ring</b>() — scanning for shared-device fingerprints…`, "cmd");
   try {
     const d = await post("/api/tools/find_ring");
-    window._rings = d.rows;
+    window._rings = d.rows; window._lastRings = d;
     const n = d.rows.length;
     agentLog(n ? `✓ <b>${n}</b> fraud ring(s) detected · ${d.ms} ms` : `✓ scan clean — no rings · ${d.ms} ms`, n ? "ok" : "dim");
-
+    renderAlertCards(d.rows);
     if (n) {
-      // visualize the biggest ring with the dedicated radial renderer
       const r = d.rows[0];
       drawRing($("ringCanvas"), r.device_id, r.account_ids, r.ips);
       $("ringList").innerHTML = d.rows.map(ringCard).join("");
@@ -631,16 +760,16 @@ $("btnRing").onclick = async () => {
   setBusy(btn, false);
 };
 
-/* ============================== STEP 03 · pagerank ============================== */
+/* ============ TOOL 03 pagerank ============ */
 $("btnPR").onclick = async () => {
   const btn = $("btnPR"); setBusy(btn, true);
   agentLog(`▸ <b>pagerank_hub</b>() — ranking mule-network hubs…`, "cmd");
   try {
     const d = await post("/api/tools/pagerank_hub", {limit: 10});
-    const rows = d.rows;
-    const max = Math.max(...rows.map(r => r.score), 1e-9);
+    window._lastPR = d;
+    const rows = d.rows; const max = Math.max(...rows.map(r => r.score), 1e-9);
     agentLog(`✓ top hub: <b>${esc(rows[0]?.account_id)}</b> (score ${Number(rows[0]?.score).toFixed(4)}) · ${d.ms} ms`, "ok");
-    let h = `<table class="rank"><tr><th>#</th><th>ACCOUNT</th><th>SCORE</th><th></th><th>SIGNALS</th><th></th></tr>`;
+    let h = `<table class="rank"><tr><th>#</th><th>Account</th><th>Score</th><th></th><th>Signals</th><th></th></tr>`;
     rows.forEach((r, i) => {
       const pct = (r.score / max * 100).toFixed(1);
       const sig = [
@@ -650,7 +779,7 @@ $("btnPR").onclick = async () => {
       h += `<tr><td style="color:var(--faint)">${i + 1}</td>
         <td><span class="pill ${r.frozen ? "frozen" : (r.risk >= 90 ? "risk" : "")}">${esc(r.account_id)}</span></td>
         <td><div class="bar"><i style="width:${pct}%"></i></div></td>
-        <td style="color:var(--dim)">${Number(r.score).toFixed(4)}</td>
+        <td style="color:var(--dim);font-family:var(--mono)">${Number(r.score).toFixed(4)}</td>
         <td>${sig}</td>
         <td><label class="stage-check" style="margin:0"><input type="checkbox" data-hub="${esc(r.account_id)}" ${staged.has(r.account_id) ? "checked" : ""}> stage</label></td></tr>`;
     });
@@ -666,49 +795,37 @@ $("btnPR").onclick = async () => {
   setBusy(btn, false);
 };
 
-/* ============================== STEP 04 · freeze (the climax) ============================== */
+/* ============ TOOL 04 freeze ============ */
 $("btnAddManual").onclick = () => {
-  $("manualIds").value.split(",").map(s => s.trim()).filter(Boolean)
-    .forEach(a => staged.add(a));
+  $("manualIds").value.split(",").map(s => s.trim()).filter(Boolean).forEach(a => staged.add(a));
   $("manualIds").value = "";
   renderStaged(); syncRingChecks();
 };
-
 let freezeArmed = false;
 $("btnFreeze").onclick = async () => {
   const btn = $("btnFreeze");
-  if (!staged.size) {
-    agentLog(`⚠ freeze aborted — nothing staged. Stage a ring or hub first.`, "warn");
-    return;
-  }
-  if (!freezeArmed) {  // two-step: arm, then fire — dramatic AND safe
-    freezeArmed = true;
-    btn.classList.add("armed");
+  if (!staged.size) { agentLog(`⚠ freeze aborted — nothing staged. Stage a ring or hub first.`, "warn"); return; }
+  if (!freezeArmed) {
+    freezeArmed = true; btn.classList.add("armed");
     btn.textContent = `⚠ CONFIRM FREEZE OF ${staged.size} ACCOUNT(S)?`;
     agentLog(`▸ freeze ARMED for ${staged.size} account(s) — click again to execute`, "act");
     setTimeout(() => {
-      if (freezeArmed) {
-        freezeArmed = false; btn.classList.remove("armed");
-        btn.textContent = "⚡ EXECUTE FREEZE";
-        agentLog(`▸ freeze disarmed (timeout)`, "dim");
-      }
+      if (freezeArmed) { freezeArmed = false; btn.classList.remove("armed");
+        btn.textContent = "⚡ EXECUTE FREEZE"; agentLog(`▸ freeze disarmed (timeout)`, "dim"); }
     }, 6000);
     return;
   }
-  freezeArmed = false; btn.classList.remove("armed");
-  btn.textContent = "⚡ EXECUTE FREEZE";
+  freezeArmed = false; btn.classList.remove("armed"); btn.textContent = "⚡ EXECUTE FREEZE";
   setBusy(btn, true);
-
   const accounts = [...staged];
   const reason = $("reason").value.trim() || "Suspected fraud ring — agent action";
   const investigator = $("investigator").value.trim() || "Agent-01";
   agentLog(`▸ <b class="act">FREEZE EXECUTING</b> — ${accounts.length} account(s), investigator "${esc(investigator)}"…`, "act");
   try {
-    const d = await post("/api/actions/freeze",
-      {accounts, reason, investigator});
+    const d = await post("/api/actions/freeze", {accounts, reason, investigator});
+    window._lastFreeze = {accounts, reason, investigator, d};
     const row = d.rows[0] || {};
     agentLog(`✓ <b>CASE ${esc(row.case_id)}</b> written — ${row.frozen_count} account(s) frozen · ${d.ms} ms`, "ok");
-
     $("caseFile").innerHTML = `
       <div class="stamp">FROZEN</div>
       <h3>CASE FILE — WRITTEN TO THE GRAPH</h3>
@@ -719,21 +836,15 @@ $("btnFreeze").onclick = async () => {
         <div class="kv">reason<br><b>${esc(reason)}</b></div>
         <div class="kv">graph write<br><b>(:Case)-[:TARGETS]->(:Account)</b></div>
       </div>`;
-
-    // visualize the case file: case node -> frozen accounts
     const nodes = [{key: "case", label: row.case_id, type: "case", sub: "CASE FILE"}];
-    (row.frozen_now || []).forEach(a =>
-      nodes.push({key: "a:" + a, label: a, type: "frozen", sub: "FROZEN"}));
+    (row.frozen_now || []).forEach(a => nodes.push({key: "a:" + a, label: a, type: "frozen", sub: "FROZEN"}));
     const edges = (row.frozen_now || []).map(a => ({a: "case", b: "a:" + a, hot: true, label: "TARGETS"}));
     drawGraph($("freezeCanvas"), nodes, edges);
-
     $("freezeCypher").innerHTML = cypherHTML(d);
     $("freezeResults").hidden = false;
     $("freezeResults").scrollIntoView({behavior: "smooth", block: "nearest"});
-
     accounts.forEach(a => staged.delete(a));
-    renderStaged(); syncRingChecks();
-    loadStats();  // frozen/case counters tick up in the header
+    renderStaged(); syncRingChecks(); loadStats();
   } catch (e) {
     agentLog(`✕ freeze failed: ${esc(e.message)}`, "warn");
     $("freezeResults").hidden = false;
@@ -743,10 +854,6 @@ $("btnFreeze").onclick = async () => {
   setBusy(btn, false);
 };
 
-/* ============================== init ============================== */
-renderStaged();
-loadStats();
-agentLog(`agent online — graph <b>${esc("fraudlens")}</b>. run an investigation step below.`, "dim");
 </script>
 </body>
 </html>

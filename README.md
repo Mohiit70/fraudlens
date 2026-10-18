@@ -67,6 +67,10 @@ After investigator confirmation, FraudLens can freeze the suspicious account and
 
 # 🎥 See FraudLens In Action
 
+### Demo Video
+
+[Watch the Demo](https://youtu.be/3-L-ux6GImk?si=uyZjZP6jempUz9JM)
+
 ### Live Demo
 
 [Open FraudLens](https://fraudlens-y5ba.onrender.com/)

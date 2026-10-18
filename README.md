@@ -83,22 +83,32 @@ Then click **Investigate**.
 
 # 🖥️ Product Preview
 
-### Landing Page
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/landing.png" width="100%" alt="FraudLens Landing Page">
+      <br><sub><b>Landing</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/trace.png" width="100%" alt="FraudLens Money Trace">
+      <br><sub><b>Trace the Money</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/rings.png" width="100%" alt="FraudLens Fraud Ring Detection">
+      <br><sub><b>Hunt the Ring</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/rank.png" width="100%" alt="FraudLens PageRank Hub Ranking">
+      <br><sub><b>Rank Hubs</b></sub>
+    </td>
+  </tr>
+</table>
 
 <p align="center">
-  <img src="docs/landing.png" width="800" alt="FraudLens Landing Page">
-</p>
-
-### Trace The Money
-
-<p align="center">
-  <img src="docs/trace.png" width="800" alt="FraudLens Money Trace">
-</p>
-
-### Detect Fraud Rings
-
-<p align="center">
-  <img src="docs/rings.png" width="800" alt="FraudLens Fraud Ring Detection">
+  <img src="docs/freeze.png" width="700" alt="FraudLens Execute Freeze">
+  <br><sub><b>Execute Freeze — The Agent Acts</b></sub>
 </p>
 
 ---

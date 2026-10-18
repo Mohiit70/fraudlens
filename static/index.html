@@ -1035,8 +1035,9 @@ $("btnFreeze").onclick = async () => {
 
 /* ============ PDF export ============ */
 $("btnPDF").onclick = () => {
+  try {
   const fz = window._lastFreeze, rg = window._lastRings, tr = window._lastTrace, pr = window._lastPR;
-  const row = (fz && fz.d.rows[0]) || {};
+  const row = (fz && fz.d && fz.d.rows && fz.d.rows[0]) || {};
   let h = `<h1>◉ FraudLens — Investigation Report</h1>
     <p class="meta">Generated ${new Date().toLocaleString("en-IN")} · Synthetic demo data · WeMakeDevs × FalkorDB "Graph Hacks"</p>`;
   if (tr) {
@@ -1090,6 +1091,9 @@ pre{background:#f5f5f5;padding:12px;border-radius:8px;font-size:11px;overflow-x:
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   agentLog(`▸ investigation report downloaded (open in browser → Print → Save as PDF)`, "ok");
+  } catch(e) {
+    agentLog(`▸ report failed: ${e.message} — run Investigate/Rings/Freeze first`, "err");
+  }
 };
 </script>
 </body>
